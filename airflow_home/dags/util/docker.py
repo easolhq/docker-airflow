@@ -10,6 +10,7 @@ from airflow.operators.docker_operator import DockerOperator
 def trim_activity_name(name):
     return name[15:]
 
+
 def create_docker_operator(params):
     # Create defaults.
     defaults = {

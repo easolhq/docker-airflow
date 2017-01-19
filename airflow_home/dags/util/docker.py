@@ -1,6 +1,7 @@
 import ast
 import json
 import os
+from datetime import timedelta
 
 from airflow.operators.docker_operator import DockerOperator
 
@@ -9,33 +10,20 @@ from airflow.operators.docker_operator import DockerOperator
 def trim_activity_name(name):
     return name[15:]
 
-
-def create_docker_operator(dag, task_id, cmd, params, image_name, privileged=False):
-    # Pass some env vars through.
-    env = {
-        'AWS_ACCESS_KEY_ID': os.getenv('AWS_ACCESS_KEY_ID', ''),
-        'AWS_SECRET_ACCESS_KEY': os.getenv('AWS_SECRET_ACCESS_KEY', ''),
-        'AWS_REGION': os.getenv('AWS_REGION', ''),
-        'AWS_S3_TEMP_BUCKET': os.getenv('AWS_S3_TEMP_BUCKET', ''),
-        'ARIES_REMOVE_FILES_AFTER_TASK': 'TRUE'
+def create_docker_operator(params):
+    # Create defaults.
+    defaults = {
+        'remove': True,
+        'xcom_push': True,
+        'volumes': ['/var/log/filebeat/aries:/usr/local/src/log']
     }
 
-    # Force pull in prod, use local in dev.
-    force_pull = ast.literal_eval(os.getenv('FORCE_PULL_TASK_IMAGES', 'True'))
+    # Merge params.
+    docker_params = defaults.copy()
+    docker_params.update(params)
 
-    # Return a new docker operator with our command.
-    return DockerOperator(
-        task_id=task_id,
-        image='astronomerio/{image_name}'.format(image_name=image_name),
-        environment=env,
-        remove=True,
-        privileged=privileged,
-        command=cmd,
-        params=params,
-        xcom_push=True,
-        force_pull=force_pull,
-        dag=dag,
-        volumes=['/var/log/filebeat/aries:/usr/local/src/log'])
+    # Return a new DockerOperator.
+    return DockerOperator(**docker_params)
 
 
 def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, activity)):
@@ -63,13 +51,45 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
     # Get the activity name.
     activity_name = trim_activity_name(activity['name'])
 
+    # Format the image name.
+    image_name = 'astronomerio/{activity_name}'.format(activity_name=activity_name)
+
     # Create task id.
     task_id = '{index}_{name}'.format(
             index=index,
             name=trim_activity_name(activity['name']))
 
-    # check for vpnConnection. Must run privileged if a tunnel is needed
+    # Check for vpnConnection. Must run privileged if a tunnel is needed.
     privileged = 'vpnConnection' in config.get('connection', {})
 
-    # Return the operator.
-    return create_docker_operator(dag, task_id, command, params, activity_name, privileged)
+    # Check for an optional execution timeout in minutes.
+    timeout = config.get('executionTimeout', None)
+    execution_timeout = timedelta(minutes=timeout) if timeout is not None else None
+
+    # Pass some env vars through.
+    env = {
+        'AWS_ACCESS_KEY_ID': os.getenv('AWS_ACCESS_KEY_ID', ''),
+        'AWS_SECRET_ACCESS_KEY': os.getenv('AWS_SECRET_ACCESS_KEY', ''),
+        'AWS_REGION': os.getenv('AWS_REGION', ''),
+        'AWS_S3_TEMP_BUCKET': os.getenv('AWS_S3_TEMP_BUCKET', ''),
+        'ARIES_REMOVE_FILES_AFTER_TASK': 'TRUE'
+    }
+
+    # Force pull in prod, use local in dev.
+    force_pull = ast.literal_eval(os.getenv('FORCE_PULL_TASK_IMAGES', 'True'))
+
+    # Create final dictionary for the DockerOperator
+    params = {
+        'task_id': task_id,
+        'image': image_name,
+        'environment': env,
+        'privileged': privileged,
+        'command': command,
+        'params': params,
+        'force_pull': force_pull,
+        'execution_timeout': execution_timeout,
+        'dag': dag
+    }
+
+    # Return a new DockerOperator.
+    return create_docker_operator(params)

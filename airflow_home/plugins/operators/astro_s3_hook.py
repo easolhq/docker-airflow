@@ -6,10 +6,9 @@ from airflow.hooks import S3Hook
 exclude_dirs = lambda paths: [i for i in paths if not i.endswith('/')]
 
 
-# TODO: give this more relevant name
-class AstroS3Hook(S3Hook):
+class S3FileHook(S3Hook):
     """
-    Similar to the built-in S3Hook except this does not match directories.
+    Similar to built-in S3Hook except excludes directories and supports multiple keys.
     """
 
     def get_wildcard_key(self, *args, **kwargs):

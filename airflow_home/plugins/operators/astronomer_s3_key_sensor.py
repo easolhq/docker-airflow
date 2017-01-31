@@ -11,7 +11,7 @@ from boto.s3.connection import S3Connection
 from airflow.hooks.base_hook import CONN_ENV_PREFIX
 from urllib import quote_plus
 
-from plugins.operators.astro_s3_hook import AstroS3Hook
+from plugins.operators.astro_s3_hook import S3FileHook
 
 aws_key = os.getenv('AWS_ACCESS_KEY_ID', '')
 aws_secret = quote_plus(os.getenv('AWS_SECRET_ACCESS_KEY', ''))
@@ -42,7 +42,7 @@ class AstronomerS3KeySensor(BaseSensorOperator):
         self.bucket_key = bucket_key
 
     def poke(self, context):
-        hook = AstroS3Hook(s3_conn_id='S3_CONNECTION')
+        hook = S3FileHook(s3_conn_id='S3_CONNECTION')
         full_url = "s3://" + self.bucket_name + "/" + self.bucket_key
         logging.info('Poking for key "{}"'.format(full_url))
         file_exists = hook.check_for_key(
@@ -71,7 +71,7 @@ class AstronomerS3WildcardKeySensor(BaseSensorOperator):
         self.soft_fail = False
 
     def poke(self, context):
-        hook = AstroS3Hook(s3_conn_id='S3_CONNECTION')
+        hook = S3FileHook(s3_conn_id='S3_CONNECTION')
         full_url = os.path.join('s3://', self.bucket_name, self.bucket_key, '*')
         logging.info('Poking for key "{}"'.format(full_url))
 
@@ -107,7 +107,7 @@ class AstronomerS3GetKeyAction(BaseOperator):
         self.bucket_key = bucket_key
 
     def execute(self, context):
-        hook = AstroS3Hook(s3_conn_id='S3_CONNECTION')
+        hook = S3FileHook(s3_conn_id='S3_CONNECTION')
 
         if is_dir(self.bucket_key):
             # a directory

@@ -51,7 +51,7 @@ class AstronomerS3KeySensor(BaseSensorOperator):
         )
 
         if not file_exists:
-            logging.error('File does not exist at "{}"'.format(full_url))
+            logging.warning('File does not exist at "{}"'.format(full_url))
 
         return file_exists
 
@@ -79,7 +79,7 @@ class AstronomerS3WildcardKeySensor(BaseSensorOperator):
         # ensure a trailing slash exists before reaching this method. This is
         # to ensure consistency in future usage.
         if not is_dir(self.bucket_key):
-            logging.error('Invalid path "{}" - the wildcard key sensor requires a trailing slash'.format(self.bucket_key))
+            logging.warning('Invalid path "{}" - the wildcard key sensor requires a trailing slash'.format(self.bucket_key))
             return False
 
         file_found = hook.check_for_wildcard_key(
@@ -88,7 +88,7 @@ class AstronomerS3WildcardKeySensor(BaseSensorOperator):
         )
 
         if not file_found:
-            logging.error('No file found at "{}"'.format(full_url))
+            logging.warning('No file found at "{}"'.format(full_url))
 
         return file_found
 

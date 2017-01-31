@@ -49,7 +49,6 @@ class AstronomerS3KeySensor(BaseSensorOperator):
             key=self.bucket_key,
             bucket_name=self.bucket_name,
         )
-        logging.info()
 
         if not file_exists:
             logging.error('File does not exist at "{}"'.format(full_url))

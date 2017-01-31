@@ -17,7 +17,7 @@ from fn.func import F
 import pymongo
 import stringcase
 
-from util.docker import create_linked_docker_operator
+from utils.docker import create_linked_docker_operator
 
 
 def ensure_trailing_slash(path):

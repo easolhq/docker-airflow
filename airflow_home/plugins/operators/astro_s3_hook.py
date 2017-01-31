@@ -6,6 +6,7 @@ from airflow.hooks import S3Hook
 exclude_dirs = lambda paths: [i for i in paths if not i.endswith('/')]
 
 
+# TODO: give this more relevant name
 class AstroS3Hook(S3Hook):
     """
     Similar to the built-in S3Hook except this does not match directories.

@@ -88,7 +88,13 @@ for webhook in webhooks:
     merge_params = {'webhook_id': webhook_id, 'bucket': os.getenv('AWS_S3_TEMP_BUCKET')}
 
     # Create docker container operator for s3_merge_source.
-    merge = create_docker_operator(dag, 's3_merge_source', merge_command, merge_params, 's3-merge-source')
+    merge = create_docker_operator({
+        'task_id': 's3_merge_source',
+        'image': 's3-merge-source',
+        'command': merge_command,
+        'params': merge_params,
+        'dag': dag,
+    })
 
     merge.set_upstream(sensor)
 

@@ -1,25 +1,8 @@
 #!/usr/bin/env bash
 
-CONN_ATTEMPTS=50
-
 # Configure airflow with postgres connection string.
-if [ -v AIRFLOW_POSTGRES_HOST ] && [ -v AIRFLOW_POSTGRES_USER ] && [ -v AIRFLOW_POSTGRES_PASSWORD ]; then
-    echo "Querying for postgres host SRV record (${AIRFLOW_POSTGRES_HOST}) ..."
-
-    DNS=""
-    DIG="dig $AIRFLOW_POSTGRES_HOST +noall +answer +short -t SRV"
-
-    while DNS=`$DIG` && [ -z "$DNS" ]; do
-        i=`expr $i + 1`;
-        if [ $i -ge $CONN_ATTEMPTS ]; then
-            echo "$(date) - DNS not diggable, giving up";
-            exit 1;
-        fi;
-        echo "Postgres HOST DNS entry was not found yet Retrying... $i/$CONN_ATTEMPTS";
-        sleep 1
-    done
-
-    CONN=`echo $DNS | awk -v user=$AIRFLOW_POSTGRES_USER -v pass=$AIRFLOW_POSTGRES_PASSWORD '{print "postgresql://" user ":" pass "@" $4 ":" $3}'`
+if [ -v AIRFLOW_POSTGRES_HOST ] && [ -v AIRFLOW_POSTGRES_PORT ] && [ -v AIRFLOW_POSTGRES_USER ] && [ -v AIRFLOW_POSTGRES_PASSWORD ]; then
+    CONN="postgresql://$AIRFLOW_POSTGRES_USER:$AIRFLOW_POSTGRES_PASSWORD@$AIRFLOW_POSTGRES_HOST:$AIRFLOW_POSTGRES_PORT"
     echo "Setting AIRFLOW__CORE__SQL_ALCHEMY_CONN=${CONN}"
     export AIRFLOW__CORE__SQL_ALCHEMY_CONN=$CONN
 fi

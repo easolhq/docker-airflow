@@ -11,7 +11,7 @@ from plugins.operators.utils import is_dir
 config_s3()
 
 
-class AstronomerS3KeySensor(BaseSensorOperator):
+class S3FileKeySensor(BaseSensorOperator):
     """
     Detect an exact file path in S3.
     """
@@ -20,7 +20,7 @@ class AstronomerS3KeySensor(BaseSensorOperator):
 
     @apply_defaults
     def __init__(self, bucket_key, bucket_name, *args, **kwargs):
-        super(AstronomerS3KeySensor, self).__init__(*args, **kwargs)
+        super(S3FileKeySensor, self).__init__(*args, **kwargs)
         self.bucket_name = bucket_name
         self.bucket_key = bucket_key
 

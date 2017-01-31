@@ -6,7 +6,7 @@ class AstronomerPlugin(AirflowPlugin):
     name = "astronomer_plugin"
     operators = [
         operators.S3GetKeyOperator,
-        operators.AstronomerS3KeySensor,
+        operators.S3FileKeySensor,
         operators.S3WildcardKeySensor,
     ]
     hooks = [

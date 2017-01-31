@@ -10,7 +10,7 @@ import os
 from airflow import DAG
 from airflow.hooks.base_hook import CONN_ENV_PREFIX
 from airflow.operators import (
-    AstronomerS3GetKeyAction, AstronomerS3KeySensor, AstronomerS3WildcardKeySensor, DummyOperator,
+    AstronomerS3GetKeyAction, AstronomerS3KeySensor, AstronomerS3WildcardKeySensor,
 )
 
 from fn.func import F
@@ -70,8 +70,6 @@ for ftp_config in ftp_configs:
     dag = DAG(dag_name, default_args=default_args, schedule_interval=schedule)
     globals()[id_] = dag
 
-    op_0_dummy = DummyOperator(task_id='start', dag=dag)
-
     file_dir, file_ext = os.path.splitext(path)
 
     # probe for file presence
@@ -87,7 +85,6 @@ for ftp_config in ftp_configs:
             timeout=timeout,
             dag=dag,
         )
-        task_1_s3_sensor.set_upstream(op_0_dummy)
     else:
         # literal file paths
         task_1_s3_sensor = AstronomerS3KeySensor(
@@ -99,7 +96,6 @@ for ftp_config in ftp_configs:
             timeout=timeout,
             dag=dag,
         )
-        task_1_s3_sensor.set_upstream(op_0_dummy)
 
     # fetch file path into XCom
     task_2_s3_get = AstronomerS3GetKeyAction(

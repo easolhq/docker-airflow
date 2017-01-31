@@ -5,9 +5,7 @@ import logging
 
 from airflow.models import BaseOperator
 from airflow.operators.sensors import BaseSensorOperator
-from airflow.hooks import S3Hook
 from airflow.utils.decorators import apply_defaults
-from boto.s3.connection import S3Connection
 from airflow.hooks.base_hook import CONN_ENV_PREFIX
 from urllib import quote_plus
 

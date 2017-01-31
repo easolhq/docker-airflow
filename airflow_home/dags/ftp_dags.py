@@ -10,7 +10,7 @@ import os
 from airflow import DAG
 from airflow.hooks.base_hook import CONN_ENV_PREFIX
 from airflow.operators import (
-    AstronomerS3GetKeyAction, AstronomerS3KeySensor, AstronomerS3WildcardKeySensor,
+    AstronomerS3KeySensor, AstronomerS3WildcardKeySensor, S3GetKeyOperator,
 )
 
 from fn.func import F
@@ -89,7 +89,7 @@ for ftp_config in ftp_configs:
         )
 
     # fetch file path into XCom
-    task_2_s3_get = AstronomerS3GetKeyAction(
+    task_2_s3_get = S3GetKeyOperator(
         bucket_name=S3_BUCKET,
         bucket_key=path,
         xcom_push=True,

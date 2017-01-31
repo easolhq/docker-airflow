@@ -81,7 +81,7 @@ class AstronomerS3WildcardKeySensor(BaseSensorOperator):
         return file_found
 
 
-class AstronomerS3GetKeyAction(BaseOperator):
+class S3GetKeyOperator(BaseOperator):
     """
     Grab the top S3 key match.
 
@@ -90,7 +90,7 @@ class AstronomerS3GetKeyAction(BaseOperator):
 
     @apply_defaults
     def __init__(self, bucket_key, bucket_name, xcom_push=False, *args, **kwargs):
-        super(AstronomerS3GetKeyAction, self).__init__(*args, **kwargs)
+        super(S3GetKeyOperator, self).__init__(*args, **kwargs)
         self.bucket_name = bucket_name
         self.bucket_key = bucket_key
 

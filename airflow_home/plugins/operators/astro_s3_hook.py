@@ -26,7 +26,7 @@ class AstroS3Hook(S3Hook):
         prefix = re.split(r'[*]', wildcard_key, 1)[0]
         klist = self.list_keys(bucket_name, prefix=prefix, delimiter=delimiter)
         if not klist:
-            return None
+            return None, None
         key_matches = [k for k in klist if fnmatch.fnmatch(k, wildcard_key)]
         # prevent "directories" from returning in results as we only
         # want to match files (not an empty top-level directory)

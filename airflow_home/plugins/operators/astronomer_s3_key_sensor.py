@@ -8,7 +8,7 @@ from airflow.utils.decorators import apply_defaults
 from airflow.hooks.base_hook import CONN_ENV_PREFIX
 from urllib import quote_plus
 
-from plugins.hooks.s3_file_hook import S3FileHook
+from plugins.hooks import S3FileHook
 from plugins.operators.utils import build_xcom, is_dir
 
 aws_key = os.getenv('AWS_ACCESS_KEY_ID', '')

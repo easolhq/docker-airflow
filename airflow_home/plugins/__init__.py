@@ -1,5 +1,5 @@
 from airflow.plugins_manager import AirflowPlugin
-from plugins import operators
+from plugins import hooks, operators
 
 
 class AstronomerPlugin(AirflowPlugin):
@@ -8,4 +8,7 @@ class AstronomerPlugin(AirflowPlugin):
         operators.AstronomerS3GetKeyAction,
         operators.AstronomerS3KeySensor,
         operators.AstronomerS3WildcardKeySensor,
+    ]
+    hooks = [
+        hooks.S3FileHook,
     ]

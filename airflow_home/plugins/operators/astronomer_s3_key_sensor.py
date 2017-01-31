@@ -17,6 +17,16 @@ aws_key = os.getenv('AWS_ACCESS_KEY_ID', '')
 aws_secret = quote_plus(os.getenv('AWS_SECRET_ACCESS_KEY', ''))
 os.environ[CONN_ENV_PREFIX + 'S3_CONNECTION'] = 's3://{aws_key}:{aws_secret}@S3'.format(aws_key=aws_key, aws_secret=aws_secret)
 
+is_dir = lambda key: key.endswith('/')
+
+
+def build_xcom(path):
+    """
+    Construct the JSON object that downstream tasks expect from XCom.
+    """
+    logging.info('Pushing path "{}" to XCom'.format(path))
+    return json.dumps({'input': {'key': path}})
+
 
 class AstronomerS3KeySensor(BaseSensorOperator):
     """
@@ -26,21 +36,25 @@ class AstronomerS3KeySensor(BaseSensorOperator):
     template_fields = ('bucket_key', 'bucket_name')
 
     @apply_defaults
-    def __init__(self,
-                 bucket_key,
-                 bucket_name,
-                 *args, **kwargs):
+    def __init__(self, bucket_key, bucket_name, *args, **kwargs):
         super(AstronomerS3KeySensor, self).__init__(*args, **kwargs)
         self.bucket_name = bucket_name
         self.bucket_key = bucket_key
 
     def poke(self, context):
-        hook = S3Hook(s3_conn_id='S3_CONNECTION')
+        hook = AstroS3Hook(s3_conn_id='S3_CONNECTION')
         full_url = "s3://" + self.bucket_name + "/" + self.bucket_key
-        logging.info('Poking for key : {full_url}'.format(**locals()))
-        return hook.check_for_prefix(prefix=self.bucket_key,
-                                     bucket_name=self.bucket_name,
-                                     delimiter='/')
+        logging.info('Poking for key "{}"'.format(full_url))
+        file_exists = hook.check_for_key(
+            key=self.bucket_key,
+            bucket_name=self.bucket_name,
+        )
+        logging.info()
+
+        if not file_exists:
+            logging.error('File does not exist at "{}"'.format(full_url))
+
+        return file_exists
 
 
 class AstronomerS3WildcardKeySensor(BaseSensorOperator):
@@ -55,41 +69,56 @@ class AstronomerS3WildcardKeySensor(BaseSensorOperator):
         super(AstronomerS3WildcardKeySensor, self).__init__(*args, **kwargs)
         self.bucket_name = bucket_name
         self.bucket_key = bucket_key
+        self.soft_fail = False
 
     def poke(self, context):
-        hook = S3Hook(s3_conn_id='S3_CONNECTION')
+        hook = AstroS3Hook(s3_conn_id='S3_CONNECTION')
         full_url = os.path.join('s3://', self.bucket_name, self.bucket_key, '*')
-        logging.info('Poking for key : {}'.format(full_url))
-        return hook.check_for_wildcard_key(wildcard_key=self.bucket_key, bucket_name=self.bucket_name, delimiter='/')
+        logging.info('Poking for key "{}"'.format(full_url))
+
+        # Directories without trailing slash are supported by FTP DAGs which
+        # ensure a trailing slash exists before reaching this method. This is
+        # to ensure consistency in future usage.
+        if not is_dir(self.bucket_key):
+            logging.error('Invalid path "{}" - the wildcard key sensor requires a trailing slash'.format(self.bucket_key))
+            return False
+
+        file_found = hook.check_for_wildcard_key(
+            wildcard_key=full_url,
+            delimiter='/',
+        )
+        return file_found
 
 
 class AstronomerS3GetKeyAction(BaseOperator):
     """
-    Grab the top S3 key matching a wildcard regex.
+    Grab the top S3 key match.
+
+    Support both literal file paths and directories as wildcards.
     """
 
     @apply_defaults
     def __init__(self, bucket_key, bucket_name, xcom_push=False, *args, **kwargs):
         super(AstronomerS3GetKeyAction, self).__init__(*args, **kwargs)
         self.bucket_name = bucket_name
-        self.bucket_key = os.path.join(bucket_key, '*')
-        self.xcom_push = xcom_push
+        self.bucket_key = bucket_key
 
     def execute(self, context):
         hook = AstroS3Hook(s3_conn_id='S3_CONNECTION')
-        print('AstronomerS3GetKeyAction.execute checking for wildcard key', self.bucket_key)
-        key = hook.get_wildcard_key(
-            wildcard_key=self.bucket_key,
-            bucket_name=self.bucket_name,
-            delimiter='/',
-        )
 
-        # if an empty directory at exists at the wildcard key, then it's considered a match; however, we don't want to
-        # continue for an empty directory
-        if key is not None:
-            if self.xcom_push:
-                logging.info('pushing path {} to xcom'.format(key.name))
-                xcom_value = json.dumps({'input': {'key': key.name}})
-                return xcom_value  # push to XCom
+        if is_dir(self.bucket_key):
+            # a directory
+            bucket_key_wildcard = os.path.join(self.bucket_key, '*')
+            key = hook.get_wildcard_key(
+                wildcard_key=bucket_key_wildcard,
+                bucket_name=self.bucket_name,
+                delimiter='/',
+            )
         else:
-            logging.info('not pushing path to xcom')
+            # a literal file
+            key = hook.get_key(
+                self.bucket_key,
+                bucket_name=self.bucket_name,
+            )
+
+        return build_xcom(key.name)

@@ -3,6 +3,8 @@ import fnmatch
 
 from airflow.hooks import S3Hook
 
+exclude_dirs = lambda paths: [i for i in paths if not i.endswith('/')]
+
 
 class AstroS3Hook(S3Hook):
     """
@@ -20,5 +22,5 @@ class AstroS3Hook(S3Hook):
         key_matches = [k for k in klist if fnmatch.fnmatch(k, wildcard_key)]
         # prevent "directories" from returning in results as we only
         # want to match files (not an empty top-level directory)
-        key_matches = [i for i in key_matches if not i.endswith('/')]
+        key_matches = exclude_dirs(key_matches)
         return bucket.get_key(key_matches[0]) if key_matches else None

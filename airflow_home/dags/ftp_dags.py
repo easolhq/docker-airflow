@@ -4,6 +4,7 @@ FTP content ingestion via S3 bucket wildcard key into Airflow.
 
 from urllib import quote_plus
 import datetime
+import logging
 import os
 
 from airflow import DAG
@@ -17,6 +18,16 @@ import pymongo
 import stringcase
 
 from util.docker import create_linked_docker_operator
+
+
+def ensure_trailing_slash(path):
+    """
+    Ensure directory paths include a trailing slash.
+    """
+    if not path.endswith('/'):
+        path += '/'
+    return path
+
 
 MONGO_URL = os.getenv('MONGO_URL', '')
 S3_BUCKET = os.getenv('AWS_S3_TEMP_BUCKET')
@@ -41,7 +52,7 @@ default_args = {
 client = pymongo.MongoClient(MONGO_URL)
 
 ftp_configs = client.get_default_database().ftpConfigs.find({})
-print('Found {} ftp_configs.'.format(ftp_configs.count()))
+logging.debug('Found {} ftpConfigs.'.format(ftp_configs.count()))
 
 # one FTP config per workflow and each customer can have zero or more workflows
 for ftp_config in ftp_configs:
@@ -54,26 +65,43 @@ for ftp_config in ftp_configs:
     activity_list = ftp_config['activityList']
 
     dag_name = '{config_name}__ftp__{id}'.format(config_name=config_name, id=id_)
-    print('Building DAG', dag_name)
+    logging.debug('Building DAG "{}"'.format(dag_name))
 
     dag = DAG(dag_name, default_args=default_args, schedule_interval=schedule)
     globals()[id_] = dag
 
     op_0_dummy = DummyOperator(task_id='start', dag=dag)
 
-    # probe for files (assumes only one matching file at a time)
-    task_1_s3_sensor = AstronomerS3WildcardKeySensor(
-        task_id='s3_ftp_config_sensor',
-        bucket_name=S3_BUCKET,
-        bucket_key=path,
-        soft_fail=True,
-        poke_interval=poke_interval,
-        timeout=timeout,
-        dag=dag,
-    )
-    task_1_s3_sensor.set_upstream(op_0_dummy)
+    file_dir, file_ext = os.path.splitext(path)
 
-    # grab files
+    # probe for file presence
+    if file_ext == '':
+        # wildcard paths (directories)
+        path = ensure_trailing_slash(path)
+        task_1_s3_sensor = AstronomerS3WildcardKeySensor(
+            task_id='s3_ftp_config_sensor_wildcard',
+            bucket_name=S3_BUCKET,
+            bucket_key=path,
+            soft_fail=True,
+            poke_interval=poke_interval,
+            timeout=timeout,
+            dag=dag,
+        )
+        task_1_s3_sensor.set_upstream(op_0_dummy)
+    else:
+        # literal file paths
+        task_1_s3_sensor = AstronomerS3KeySensor(
+            task_id='s3_ftp_config_sensor_file',
+            bucket_name=S3_BUCKET,
+            bucket_key=path,
+            soft_fail=True,
+            poke_interval=poke_interval,
+            timeout=timeout,
+            dag=dag,
+        )
+        task_1_s3_sensor.set_upstream(op_0_dummy)
+
+    # fetch file path into XCom
     task_2_s3_get = AstronomerS3GetKeyAction(
         bucket_name=S3_BUCKET,
         bucket_key=path,

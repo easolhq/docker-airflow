@@ -1,1 +1,1 @@
-from plugins.hooks.astro_s3_hook import S3FileHook
+from plugins.hooks.s3_file_hook import S3FileHook

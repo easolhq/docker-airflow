@@ -18,16 +18,7 @@ import pymongo
 import stringcase
 
 from utils.docker import create_linked_docker_operator
-
-
-def ensure_trailing_slash(path):
-    """
-    Ensure directory paths include a trailing slash.
-    """
-    if not path.endswith('/'):
-        path += '/'
-    return path
-
+from utils.paths import ensure_trailing_slash
 
 MONGO_URL = os.getenv('MONGO_URL', '')
 S3_BUCKET = os.getenv('AWS_S3_TEMP_BUCKET')

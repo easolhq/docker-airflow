@@ -41,7 +41,7 @@ class AstronomerS3KeySensor(BaseSensorOperator):
         return file_exists
 
 
-class AstronomerS3WildcardKeySensor(BaseSensorOperator):
+class S3WildcardKeySensor(BaseSensorOperator):
     """
     Detect a wildcard filepath in a "directory" in S3.
     """
@@ -50,7 +50,7 @@ class AstronomerS3WildcardKeySensor(BaseSensorOperator):
 
     @apply_defaults
     def __init__(self, bucket_key, bucket_name, *args, **kwargs):
-        super(AstronomerS3WildcardKeySensor, self).__init__(*args, **kwargs)
+        super(S3WildcardKeySensor, self).__init__(*args, **kwargs)
         self.bucket_name = bucket_name
         self.bucket_key = bucket_key
         self.soft_fail = False

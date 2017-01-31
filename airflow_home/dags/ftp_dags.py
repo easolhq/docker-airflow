@@ -10,7 +10,7 @@ import os
 from airflow import DAG
 from airflow.hooks.base_hook import CONN_ENV_PREFIX
 from airflow.operators import (
-    AstronomerS3KeySensor, AstronomerS3WildcardKeySensor, S3GetKeyOperator,
+    AstronomerS3KeySensor, S3WildcardKeySensor, S3GetKeyOperator,
 )
 
 from fn.func import F
@@ -67,7 +67,7 @@ for ftp_config in ftp_configs:
     if file_ext == '':
         # wildcard paths (directories)
         path = ensure_trailing_slash(path)
-        task_1_s3_sensor = AstronomerS3WildcardKeySensor(
+        task_1_s3_sensor = S3WildcardKeySensor(
             task_id='s3_ftp_config_sensor_wildcard',
             bucket_name=S3_BUCKET,
             bucket_key=path,

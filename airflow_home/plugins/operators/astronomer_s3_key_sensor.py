@@ -86,6 +86,10 @@ class AstronomerS3WildcardKeySensor(BaseSensorOperator):
             wildcard_key=full_url,
             delimiter='/',
         )
+
+        if not file_found:
+            logging.error('No file found at "{}"'.format(full_url))
+
         return file_found
 
 

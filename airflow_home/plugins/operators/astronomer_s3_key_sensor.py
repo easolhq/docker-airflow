@@ -1,4 +1,3 @@
-import json
 import os
 import os.path
 import logging
@@ -10,20 +9,11 @@ from airflow.hooks.base_hook import CONN_ENV_PREFIX
 from urllib import quote_plus
 
 from plugins.operators.astro_s3_hook import S3FileHook
+from plugins.operators.utils import build_xcom, is_dir
 
 aws_key = os.getenv('AWS_ACCESS_KEY_ID', '')
 aws_secret = quote_plus(os.getenv('AWS_SECRET_ACCESS_KEY', ''))
 os.environ[CONN_ENV_PREFIX + 'S3_CONNECTION'] = 's3://{aws_key}:{aws_secret}@S3'.format(aws_key=aws_key, aws_secret=aws_secret)
-
-is_dir = lambda key: key.endswith('/')
-
-
-def build_xcom(path):
-    """
-    Construct the JSON object that downstream tasks expect from XCom.
-    """
-    logging.info('Pushing path "{}" to XCom'.format(path))
-    return json.dumps({'input': {'key': path}})
 
 
 class AstronomerS3KeySensor(BaseSensorOperator):

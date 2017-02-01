@@ -50,11 +50,11 @@ RUN set -ex \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
     # && useradd -ms /bin/bash -d ${AIRFLOW_HOME} airflow \
     && pip install pytz==2015.7 \
-    && pip install cryptography \
-    && pip install pyOpenSSL \
-    && pip install ndg-httpsclient \
-    && pip install pyasn1 \
-    && pip install protobuf \
+    && pip install cryptography==1.7.2 \
+    && pip install pyOpenSSL==16.2.0 \
+    && pip install ndg-httpsclient==0.4.2 \
+    && pip install pyasn1==0.1.9 \
+    && pip install protobuf==3.2.0 \
     && pip install pydash==3.4.3 \
     && pip install pymongo==3.2.2 \
     && pip install stringcase==1.0.6 \

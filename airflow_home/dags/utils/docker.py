@@ -16,7 +16,7 @@ def task_name(name):
         return trim_activity_name(name)
     return name.split('/')[1]
 
-def image_name(name, version):
+def get_image_name(name, version):
 # legacy naming convention. remove once migrated
     if 'aries-activity' in name:
         return 'astronomerio/{name}'.format(**locals())
@@ -61,7 +61,7 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
     params = {'config': config_str, 'prev_task_id': prev_task_id}
 
     # Format the image name.
-    image_name = image_name(activity['name'], activity['version'])
+    image_name = get_image_name(activity['name'], activity['version'])
 
     # Create task id.
     task_id = '{index}_{name}'.format(

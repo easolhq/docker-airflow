@@ -61,7 +61,7 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
     params = {'config': config_str, 'prev_task_id': prev_task_id}
 
     # Format the image name.
-    version = if 'version' in activity then activity['version'] else 'lastest'
+    version = activity['version'] if 'version' in activity else 'latest'
     image_name = get_image_name(activity['name'], version)
 
     # Create task id.

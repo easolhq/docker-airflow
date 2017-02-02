@@ -10,13 +10,15 @@ from airflow.operators.docker_operator import DockerOperator
 def trim_activity_name(name):
     return name[15:]
 
-def task_name(name):
+# formats a task name for use as an airflow task id
+def format_task_name(name):
     if 'aries-activity' in name:
 # legacy naming convention. remove once migrated
         return trim_activity_name(name)
     return name.split('/')[1]
 
-def get_image_name(name, version):
+# formats an image name
+def format_image_name(name, version):
 # legacy naming convention. remove once migrated
     if 'aries-activity' in name:
         return 'astronomerio/{name}'.format(**locals())
@@ -44,7 +46,7 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
         initial_task_id if index is 0
         else '{index}_{name}'.format(
             index=index-1,
-            name=task_name(activity_list[index - 1]['name'])))
+            name=format_task_name(activity_list[index - 1]['name'])))
 
     # Template out a command.
     command = """
@@ -62,12 +64,12 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
 
     # Format the image name.
     version = activity['version'] if 'version' in activity else 'latest'
-    image_name = get_image_name(activity['name'], version)
+    image_name = format_image_name(activity['name'], version)
 
     # Create task id.
     task_id = '{index}_{name}'.format(
             index=index,
-            name=task_name(activity['name']))
+            name=format_task_name(activity['name']))
 
     # Check for vpnConnection. Must run privileged if a tunnel is needed.
     privileged = 'vpnConnection' in config.get('connection', {})

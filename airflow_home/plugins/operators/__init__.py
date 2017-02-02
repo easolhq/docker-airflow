@@ -1,5 +1,3 @@
-from plugins.operators.astronomer_s3_key_sensor import AstronomerS3KeySensor
-
-__all__ = [
-    'AstronomerS3KeySensor'
-]
+from plugins.operators.s3_file_key_sensor import S3FileKeySensor
+from plugins.operators.s3_get_key_operator import S3GetKeyOperator
+from plugins.operators.s3_wildcard_key_sensor import S3WildcardKeySensor

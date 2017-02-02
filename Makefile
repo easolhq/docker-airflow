@@ -17,4 +17,3 @@ test-ci:
 
 lint-ci:
 	docker run $(IMAGE_NAME) pycodestyle .
-

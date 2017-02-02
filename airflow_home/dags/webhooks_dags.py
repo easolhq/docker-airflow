@@ -1,12 +1,12 @@
 from airflow import DAG
-from airflow.operators import AstronomerS3KeySensor
+from airflow.operators import S3FileKeySensor
 from airflow.operators import DummyOperator
 from datetime import datetime, timedelta
 from fn.func import F
 import stringcase as case
 import pymongo
 import os
-from util.docker import create_docker_operator, create_linked_docker_operator
+from utils.docker import create_docker_operator, create_linked_docker_operator
 
 now = datetime.utcnow() - timedelta(hours=1)
 start_date = datetime(now.year, now.month, now.day, now.hour)
@@ -66,7 +66,7 @@ for webhook in webhooks:
     prefix = 'webhooks/{{ params.webhook_id }}/{{ ts }}/{{ ds }}'
 
     # Check if we have any files.  Probes for a minute, every 15 seconds.
-    sensor = AstronomerS3KeySensor(
+    sensor = S3FileKeySensor(
         task_id='s3_webhooks_sensor',
         bucket_name=os.getenv('AWS_S3_TEMP_BUCKET'),
         bucket_key=prefix,

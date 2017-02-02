@@ -15,7 +15,9 @@ def format_task_name(name):
     if 'aries-activity' in name:
 # legacy naming convention. remove once migrated
         return trim_activity_name(name)
-    return name.split('/')[1]
+    elif '/' in name:
+        return name.split('/')[1]
+    return name
 
 # formats an image name
 def format_image_name(name, version):

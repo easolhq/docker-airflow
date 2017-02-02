@@ -4,7 +4,7 @@ from fn.func import F
 import stringcase as case
 import pymongo
 import os
-from util.docker import create_linked_docker_operator
+from utils.docker import create_linked_docker_operator
 
 now = datetime.utcnow() - timedelta(hours=1)
 start_date = datetime(now.year, now.month, now.day, now.hour)

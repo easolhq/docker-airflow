@@ -1,9 +1,7 @@
 import json
 import logging
 
-
-def is_dir(key):
-    return key.endswith('/')
+is_dir = lambda key: key.endswith('/')
 
 
 def build_xcom(path):

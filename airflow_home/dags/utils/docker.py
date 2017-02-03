@@ -25,8 +25,8 @@ def format_task_name(name):
 def format_image_name(name, version):
     # TODO: legacy naming convention. remove once migrated
     if name.startswith('aries-activity'):
-        return 'astronomerio/{name}'.format(name)
-    return '{name}:{version}'.format(name, version)
+        return 'astronomerio/{name}'.format(name=name)
+    return '{name}:{version}'.format(name=name, version=version)
 
 
 def create_docker_operator(params):

@@ -50,7 +50,7 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
     prev_task_id = (
         initial_task_id if index is 0
         else '{index}_{name}'.format(
-            index=index-1,
+            index=index - 1,
             name=format_task_name(activity_list[index - 1]['name'])))
 
     # Template out a command.
@@ -73,8 +73,8 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
 
     # Create task id.
     task_id = '{index}_{name}'.format(
-            index=index,
-            name=format_task_name(activity['name']))
+        index=index,
+        name=format_task_name(activity['name']))
 
     # Check for vpnConnection. Must run privileged if a tunnel is needed.
     privileged = 'vpnConnection' in config.get('connection', {})

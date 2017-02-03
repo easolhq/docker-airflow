@@ -12,8 +12,8 @@ def trim_activity_name(name):
 
 # formats a task name for use as an airflow task id
 def format_task_name(name):
-    if 'aries-activity' in name:
-# legacy naming convention. remove once migrated
+    if name.startswith('aries-activity'):
+        # TODO: legacy naming convention. remove once migrated
         return trim_activity_name(name)
     elif '/' in name:
         return name.split('/')[1]
@@ -21,10 +21,10 @@ def format_task_name(name):
 
 # formats an image name
 def format_image_name(name, version):
-# legacy naming convention. remove once migrated
-    if 'aries-activity' in name:
-        return 'astronomerio/{name}'.format(**locals())
-    return '{name}:{version}'.format(**locals())
+    # TODO: legacy naming convention. remove once migrated
+    if name.startswith('aries-activity'):
+        return 'astronomerio/{name}'.format(name)
+    return '{name}:{version}'.format(name, version)
 
 def create_docker_operator(params):
     # Create defaults.

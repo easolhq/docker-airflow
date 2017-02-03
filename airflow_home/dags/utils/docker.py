@@ -10,6 +10,7 @@ from airflow.operators.docker_operator import DockerOperator
 def trim_activity_name(name):
     return name[15:]
 
+
 # formats a task name for use as an airflow task id
 def format_task_name(name):
     if name.startswith('aries-activity'):
@@ -19,12 +20,14 @@ def format_task_name(name):
         return name.split('/')[1]
     return name
 
+
 # formats an image name
 def format_image_name(name, version):
     # TODO: legacy naming convention. remove once migrated
     if name.startswith('aries-activity'):
         return 'astronomerio/{name}'.format(name)
     return '{name}:{version}'.format(name, version)
+
 
 def create_docker_operator(params):
     # Create defaults.

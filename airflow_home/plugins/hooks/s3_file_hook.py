@@ -3,7 +3,9 @@ import fnmatch
 
 from airflow.hooks import S3Hook
 
-exclude_dirs = lambda paths: [i for i in paths if not i.endswith('/')]
+
+def exclude_dirs(paths):
+    return [i for i in paths if not i.endswith('/')]
 
 
 class S3FileHook(S3Hook):

@@ -25,7 +25,7 @@ def format_task_name(name):
 def format_image_name(name, version):
     # TODO: legacy naming convention. remove once migrated
     if name.startswith('aries-activity'):
-        return 'astronomerio/{name}'.format(name=name)
+        return 'astronomerio/{name}'.format(name=trim_activity_name(name))
     return '{name}:{version}'.format(name=name, version=version)
 
 

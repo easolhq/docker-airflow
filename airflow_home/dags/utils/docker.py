@@ -11,6 +11,24 @@ def trim_activity_name(name):
     return name[15:]
 
 
+# formats a task name for use as an airflow task id
+def format_task_name(name):
+    if name.startswith('aries-activity'):
+        # TODO: legacy naming convention. remove once migrated
+        return trim_activity_name(name)
+    elif '/' in name:
+        return name.split('/')[1]
+    return name
+
+
+# formats an image name
+def format_image_name(name, version):
+    # TODO: legacy naming convention. remove once migrated
+    if name.startswith('aries-activity'):
+        return 'astronomerio/{name}'.format(name=trim_activity_name(name))
+    return '{name}:{version}'.format(name=name, version=version)
+
+
 def create_docker_operator(params):
     # Create defaults.
     defaults = {
@@ -32,8 +50,8 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
     prev_task_id = (
         initial_task_id if index is 0
         else '{index}_{name}'.format(
-            index=index-1,
-            name=trim_activity_name(activity_list[index - 1]['name'])))
+            index=index - 1,
+            name=format_task_name(activity_list[index - 1]['name'])))
 
     # Template out a command.
     command = """
@@ -49,16 +67,14 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
     # The params for the command.
     params = {'config': config_str, 'prev_task_id': prev_task_id}
 
-    # Get the activity name.
-    activity_name = trim_activity_name(activity['name'])
-
     # Format the image name.
-    image_name = 'astronomerio/{activity_name}'.format(activity_name=activity_name)
+    version = activity['version'] if 'version' in activity else 'latest'
+    image_name = format_image_name(activity['name'], version)
 
     # Create task id.
     task_id = '{index}_{name}'.format(
-            index=index,
-            name=trim_activity_name(activity['name']))
+        index=index,
+        name=format_task_name(activity['name']))
 
     # Check for vpnConnection. Must run privileged if a tunnel is needed.
     privileged = 'vpnConnection' in config.get('connection', {})

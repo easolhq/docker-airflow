@@ -2,9 +2,9 @@ from airflow import DAG
 from datetime import datetime, timedelta
 from fn.func import F
 import stringcase as case
-import pymongo
 import os
 from utils.docker import create_linked_docker_operator
+from utils.db import MongoClient
 
 now = datetime.utcnow() - timedelta(hours=1)
 start_date = datetime(now.year, now.month, now.day, now.hour)
@@ -20,18 +20,11 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-# Get mongo url.
-mongo_url = os.getenv('MONGO_URL', '')
-
-# Connect to mongo.
-print('Connecting to mongodb.')
-client = pymongo.MongoClient(mongo_url)
-
 # Query for all workflows.
 print('Querying for cloud workflows.')
-workflows = client.get_default_database().workflows.find({'_airflow': True})
+client = MongoClient()
+workflows = client.workflow_configs()
 
-print('Found {count} workflows.'.format(count=workflows.count()))
 for workflow in workflows:
     # Get the workflow id.
     workflow_id = workflow['_id']

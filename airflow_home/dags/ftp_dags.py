@@ -14,13 +14,12 @@ from airflow.operators import (
 )
 
 from fn.func import F
-import pymongo
 import stringcase
 
 from utils.docker import create_linked_docker_operator
 from utils.paths import ensure_trailing_slash
+from utils.db import MongoClient
 
-MONGO_URL = os.getenv('MONGO_URL', '')
 S3_BUCKET = os.getenv('AWS_S3_TEMP_BUCKET')
 aws_key = os.getenv('AWS_ACCESS_KEY_ID', '')
 aws_secret = quote_plus(os.getenv('AWS_SECRET_ACCESS_KEY', ''))
@@ -40,10 +39,8 @@ default_args = {
     'retry_delay': datetime.timedelta(minutes=5),
 }
 
-client = pymongo.MongoClient(MONGO_URL)
-
-ftp_configs = client.get_default_database().ftpConfigs.find({})
-logging.debug('Found {} ftpConfigs.'.format(ftp_configs.count()))
+client = MongoClient()
+ftp_configs = client.ftp_configs()
 
 # one FTP config per workflow and each customer can have zero or more workflows
 for ftp_config in ftp_configs:

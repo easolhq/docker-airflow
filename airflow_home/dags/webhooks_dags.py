@@ -4,9 +4,9 @@ from airflow.operators import DummyOperator
 from datetime import datetime, timedelta
 from fn.func import F
 import stringcase as case
-import pymongo
 import os
 from utils.docker import create_docker_operator, create_linked_docker_operator
+from utils.db import MongoClient
 
 now = datetime.utcnow() - timedelta(hours=1)
 start_date = datetime(now.year, now.month, now.day, now.hour)
@@ -22,18 +22,11 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-# Get mongo url.
-mongo_url = os.getenv('MONGO_URL', '')
-
-# Connect to mongo.
-print('Connecting to mongodb.')
-client = pymongo.MongoClient(mongo_url)
-
 # Query for all webhooks.
 print('Querying for cloud webhooks.')
-webhooks = client.get_default_database().webhookConfigs.find({})
+client = MongoClient()
+webhooks = client.webhook_configs()
 
-print('Found {count} webhooks.'.format(count=webhooks.count()))
 for webhook in webhooks:
     # Get the webhook id.
     webhook_id = webhook['_id']
@@ -111,3 +104,5 @@ for webhook in webhooks:
             current.set_upstream(merge)
         else:
             current.set_upstream(tasks[i - 1])
+
+client.close()

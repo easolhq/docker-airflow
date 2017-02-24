@@ -1,9 +1,11 @@
 import ast
+from bson import json_util
 import json
 import os
 from datetime import timedelta
 
 from airflow.operators.docker_operator import DockerOperator
+from .flatten import flatten_config
 
 
 # Trim aries-activity- off.
@@ -62,7 +64,8 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
 
     # Get config.
     config = activity['config'] if 'config' in activity else {}
-    config_str = json.dumps(config)
+    flattened_config = flatten_config(config)
+    config_str = json.dumps(flattened_config, default=json_util.default)
 
     # The params for the command.
     params = {'config': config_str, 'prev_task_id': prev_task_id}

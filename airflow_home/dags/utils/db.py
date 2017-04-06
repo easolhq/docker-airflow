@@ -88,5 +88,8 @@ class MongoClient:
     def ftp_configs(self):
         return self.db.ftpConfigs.aggregate(pipeline)
 
+    def clickstream_configs(self):
+        return self.db.clickstreamData.find({})
+
     def close(self):
         self.client.close()

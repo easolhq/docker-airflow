@@ -9,6 +9,7 @@ from plugins.operators.common import config_s3
 
 config_s3()
 
+
 class S3ClickstreamKeySensor(BaseSensorOperator):
     """
     Detect a execution-date bound file path in S3.

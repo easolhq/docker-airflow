@@ -47,7 +47,7 @@ def create_docker_operator(params):
     return DockerOperator(**docker_params)
 
 
-def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, activity)):
+def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, activity), pool=None):
     # Get the previous tasks id for xcom.
     prev_task_id = (
         initial_task_id if index is 0
@@ -75,7 +75,7 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
     image_name = format_image_name(activity['name'], version)
 
     # Create task id.
-    task_id = '{index}_{name}'.format(
+    task_id = activity['task_id'] if 'task_id' in activity else '{index}_{name}'.format(
         index=index,
         name=format_task_name(activity['name']))
 
@@ -92,6 +92,7 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
         'AWS_SECRET_ACCESS_KEY': os.getenv('AWS_SECRET_ACCESS_KEY', ''),
         'AWS_REGION': os.getenv('AWS_REGION', ''),
         'AWS_S3_TEMP_BUCKET': os.getenv('AWS_S3_TEMP_BUCKET', ''),
+        'AWS_S3_CLICKSTREAM_BUCKET': os.getenv('AWS_S3_CLICKSTREAM_BUCKET', ''),
         'ARIES_REMOVE_FILES_AFTER_TASK': 'TRUE'
     }
 
@@ -101,6 +102,7 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
     # Create final dictionary for the DockerOperator
     params = {
         'task_id': task_id,
+        'pool': pool,
         'image': image_name,
         'environment': env,
         'privileged': privileged,

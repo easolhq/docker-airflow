@@ -71,6 +71,11 @@ for workflow in workflows:
         default_args=default_args,
         schedule_interval='*/15 * * * *')
 
+    start = DummyOperator(
+        task_id='start',
+        dag=dag,
+    )
+
     s3_sensor = S3ClickstreamKeySensor(
         task_id='s3_clickstream_sensor',
         default_args=default_args,
@@ -81,6 +86,7 @@ for workflow in workflows:
         timeout=10,
         dag=dag,
     )
+    s3_sensor.set_upstream(start)
 
     copy_tasks = []
     for table in workflow['tables']:

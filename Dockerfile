@@ -83,9 +83,6 @@ RUN set -ex \
 # Set python path so airflow can find pip installed packages.
 ENV PYTHONPATH=${PYTHONPATH}:/usr/lib/python2.7/site-packages/
 
-# Add supervisor configs.
-ADD config /etc/supervisor/conf.d/
-
 # Add scripts.
 ADD script script
 

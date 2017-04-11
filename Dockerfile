@@ -43,7 +43,6 @@ RUN set -ex \
         locales \
         dnsutils \
         mesos \
-        supervisor \
     && apt-get install -yqq -t jessie-backports python-requests cython libpq-dev \
     && sed -i 's/^# en_US.UTF-8 UTF-8$/en_US.UTF-8 UTF-8/g' /etc/locale.gen \
     && locale-gen \

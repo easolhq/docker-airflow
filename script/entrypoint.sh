@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+if [[ $@ != *"airflow"* ]] && [[ $@ != "" ]]; then
+    exec $@
+fi
+
 : ${AIRFLOW_ROLE:=""}
 
 case "$AIRFLOW_ROLE" in

@@ -43,7 +43,6 @@ RUN set -ex \
         locales \
         dnsutils \
         mesos \
-        supervisor \
     && apt-get install -yqq -t jessie-backports python-requests cython libpq-dev \
     && sed -i 's/^# en_US.UTF-8 UTF-8$/en_US.UTF-8 UTF-8/g' /etc/locale.gen \
     && locale-gen \
@@ -83,9 +82,6 @@ RUN set -ex \
 
 # Set python path so airflow can find pip installed packages.
 ENV PYTHONPATH=${PYTHONPATH}:/usr/lib/python2.7/site-packages/
-
-# Add supervisor configs.
-ADD config /etc/supervisor/conf.d/
 
 # Add scripts.
 ADD script script

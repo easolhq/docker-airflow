@@ -18,16 +18,19 @@ class S3ClickstreamKeySensor(BaseSensorOperator):
     template_fields = ('bucket_key', 'bucket_name')
 
     @apply_defaults
-    def __init__(self, bucket_key, bucket_name, *args, **kwargs):
+    def __init__(self, bucket_key, bucket_name, timedelta=0, *args, **kwargs):
         super(S3ClickstreamKeySensor, self).__init__(*args, **kwargs)
         self.bucket_name = bucket_name
         self.bucket_key = bucket_key
+        self.timedelta = timedelta
 
     def poke(self, context):
         logging.info('Starting poke')
         hook = S3FileHook(s3_conn_id='S3_CONNECTION')
         execution_date = context['ti'].execution_date
-        batch_datetime = execution_date - timedelta(minutes=(execution_date.minute % 15))
+        batch_datetime = execution_date - timedelta(
+            minutes=((execution_date.minute % 15) + self.timedelta)
+        )
         bucket_key = self.bucket_key.format(
             date=batch_datetime.strftime("%Y-%m-%dT%H_%M_%S")
         )

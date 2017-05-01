@@ -24,7 +24,7 @@ aws_key = os.getenv('AWS_ACCESS_KEY_ID', '')
 aws_secret = quote_plus(os.getenv('AWS_SECRET_ACCESS_KEY', ''))
 os.environ[CONN_ENV_PREFIX + 'S3_CONNECTION'] = 's3://{aws_key}:{aws_secret}@S3'.format(aws_key=aws_key, aws_secret=aws_secret)
 
-now = datetime.utcnow() - timedelta(days=7)
+now = datetime.utcnow() - timedelta(days=1)
 start_date = datetime(now.year, now.month, now.day, now.hour)
 
 default_args = {
@@ -40,6 +40,48 @@ default_args = {
     'copy_table': None
 }
 
+default_tables = [
+    'page',
+    'track',
+    'identify',
+    'group',
+    'screen'
+]
+
+def create_branch(dag, parent_task, tables, delta, path):
+    for table in tables:
+        copy_sensor_task = S3ClickstreamKeySensor(
+            task_id='s3_clickstream_table_sensor_%s' % (table),
+            default_args=default_args,
+            dag=dag,
+            bucket_name=S3_BUCKET,
+            bucket_key=path + table,
+            timedelta=delta,
+            soft_fail=True,
+            poke_interval=5,
+            timeout=10,
+        )
+        copy_sensor_task.set_upstream(parent_task)
+
+        copy_task = create_linked_docker_operator(dag, [], '', (0, {
+            'task_id': 's3_clickstream_table_copy_%s' % (table),
+            'config': {
+                'appId': workflow_id,
+                'table': table,
+                'redshift_host': os.getenv('REDSHIFT_HOST'),
+                'redshift_port': os.getenv('REDSHIFT_PORT'),
+                'redshift_db': os.getenv('REDSHIFT_DB'),
+                'redshift_user': os.getenv('REDSHIFT_USER'),
+                'redshift_password': os.getenv('REDSHIFT_PASSWORD'),
+                'redshift_schema': os.getenv('REDSHIFT_SCHEMA'),
+                'temp_bucket': S3_BUCKET,
+                'timedelta': delta
+            },
+            'name': BATCH_PROCESSING_IMAGE.split(':')[0],
+            'version': BATCH_PROCESSING_IMAGE.split(':')[1]
+        }), os.getenv('AIRFLOW_CLICKSTREAM_BATCH_POOL', None))
+        copy_task.set_upstream(copy_sensor_task)
+
 # Query for all workflows.
 print('Querying for clickstream workflows.')
 client = MongoClient()
@@ -51,7 +93,7 @@ for workflow in workflows:
     default_args['app_id'] = workflow_id
 
     # Get the name of the workflow.
-    workflow_name = workflow['name'] if 'name' in workflow else 'astronomer_clickstream_to_redshift'
+    workflow_name = workflow['name'] if 'name' in workflow else 'TEST_astronomer_clickstream_to_redshift'
 
     # Lower and snake case the name if we have one, else just id.
     name = '{name}__etl__{id}'.format(
@@ -81,46 +123,33 @@ for workflow in workflows:
         default_args=default_args,
         bucket_name=S3_BUCKET,
         bucket_key=path,
-        soft_fail=True,
+        soft_fail=False,
         poke_interval=5,
         timeout=10,
         dag=dag,
     )
     s3_sensor.set_upstream(start)
+    create_branch(dag, s3_sensor, default_tables, 0, path)
 
-    copy_tasks = []
-    for table in workflow['tables']:
-        copy_sensor_task = S3ClickstreamKeySensor(
-            task_id='s3_clickstream_table_sensor_%s' % (table),
-            default_args=default_args,
-            dag=dag,
-            bucket_name=S3_BUCKET,
-            bucket_key=path + table,
-            soft_fail=True,
-            poke_interval=5,
-            timeout=10,
-        )
-        copy_tasks.append(copy_sensor_task)
-        copy_sensor_task.set_upstream(s3_sensor)
-
-        copy_task = create_linked_docker_operator(dag, [], '', (0, {
-            'task_id': 's3_clickstream_table_copy_%s' % (table),
-            'config': {
-                'appId': workflow_id,
-                'table': table,
-                'redshift_host': os.getenv('REDSHIFT_HOST'),
-                'redshift_port': os.getenv('REDSHIFT_PORT'),
-                'redshift_db': os.getenv('REDSHIFT_DB'),
-                'redshift_user': os.getenv('REDSHIFT_USER'),
-                'redshift_password': os.getenv('REDSHIFT_PASSWORD'),
-                'redshift_schema': os.getenv('REDSHIFT_SCHEMA'),
-                'temp_bucket': S3_BUCKET
-            },
-            'name': BATCH_PROCESSING_IMAGE.split(':')[0],
-            'version': BATCH_PROCESSING_IMAGE.split(':')[1]
-        }), os.getenv('AIRFLOW_CLICKSTREAM_BATCH_POOL', None))
-        copy_tasks.append(copy_task)
-        copy_task.set_upstream(copy_sensor_task)
+    s3_delayed_sensor = S3ClickstreamKeySensor(
+        task_id='s3_clickstream_delayed_sensor',
+        default_args=default_args,
+        bucket_name=S3_BUCKET,
+        bucket_key=path,
+        timedelta=15,
+        soft_fail=False,
+        poke_interval=5,
+        timeout=10,
+        dag=dag,
+    )
+    s3_delayed_sensor.set_upstream(start)
+    create_branch(
+        dag,
+        s3_delayed_sensor,
+        list(set(workflow['tables']) - set(default_tables)),
+        15,
+        path
+    )
 
 client.close()
 print 'Finished exporting clickstream DAG\'s.'

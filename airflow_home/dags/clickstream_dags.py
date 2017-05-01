@@ -93,7 +93,7 @@ for workflow in workflows:
     default_args['app_id'] = workflow_id
 
     # Get the name of the workflow.
-    workflow_name = workflow['name'] if 'name' in workflow else 'TEST_astronomer_clickstream_to_redshift'
+    workflow_name = workflow['name'] if 'name' in workflow else 'astronomer_clickstream_to_redshift'
 
     # Lower and snake case the name if we have one, else just id.
     name = '{name}__etl__{id}'.format(

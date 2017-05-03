@@ -48,6 +48,11 @@ default_tables = [
     'screen'
 ]
 
+# TODO: Update Name and Version to check for exsitance and defalut to ''
+
+# TODO: Update to pull redshift information from mongo instead of env
+
+
 def create_branch(dag, parent_task, tables, delta, path):
     for table in tables:
         copy_sensor_task = S3ClickstreamKeySensor(
@@ -77,10 +82,11 @@ def create_branch(dag, parent_task, tables, delta, path):
                 'temp_bucket': S3_BUCKET,
                 'timedelta': delta
             },
-            'name': BATCH_PROCESSING_IMAGE.split(':')[0],
-            'version': BATCH_PROCESSING_IMAGE.split(':')[1]
+            'name': '',  # BATCH_PROCESSING_IMAGE.split(':')[0],
+            'version': '',  # BATCH_PROCESSING_IMAGE.split(':')[1]
         }), os.getenv('AIRFLOW_CLICKSTREAM_BATCH_POOL', None))
         copy_task.set_upstream(copy_sensor_task)
+
 
 # Query for all workflows.
 print('Querying for clickstream workflows.')
@@ -130,6 +136,8 @@ for workflow in workflows:
     )
     s3_sensor.set_upstream(start)
     create_branch(dag, s3_sensor, default_tables, 0, path)
+
+# TODO: We should be able to remove the delayed_key_sensor because we are running at a delay
 
     s3_delayed_sensor = S3ClickstreamKeySensor(
         task_id='s3_clickstream_delayed_sensor',

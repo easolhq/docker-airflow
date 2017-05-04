@@ -2,6 +2,8 @@
 Clickstream content ingestion via S3 bucket wildcard key into Airflow.
 """
 
+# TODO: clean up and group imports
+
 from datetime import datetime, timedelta
 from urllib import quote_plus
 import os
@@ -18,10 +20,13 @@ from airflow.hooks.base_hook import CONN_ENV_PREFIX
 from fn.func import F
 import stringcase as case
 
+# TODO: move logic into a main function
+
 S3_BUCKET = os.getenv('AWS_S3_CLICKSTREAM_BUCKET')
-BATCH_PROCESSING_IMAGE = os.getenv('CLICKSTREAM_BATCH_IMAGE')
+BATCH_PROCESSING_IMAGE = os.getenv('CLICKSTREAM_BATCH_IMAGE')  # TODO: what is this?
 aws_key = os.getenv('AWS_ACCESS_KEY_ID', '')
 aws_secret = quote_plus(os.getenv('AWS_SECRET_ACCESS_KEY', ''))
+
 os.environ[CONN_ENV_PREFIX + 'S3_CONNECTION'] = 's3://{aws_key}:{aws_secret}@S3'.format(aws_key=aws_key, aws_secret=aws_secret)
 
 now = datetime.utcnow() - timedelta(days=1)
@@ -40,6 +45,7 @@ default_args = {
     'copy_table': None
 }
 
+# TODO: add alias type from segment spec?
 default_tables = [
     'page',
     'track',
@@ -54,6 +60,9 @@ default_tables = [
 
 
 def create_branch(dag, parent_task, tables, delta, path):
+    """
+    TODO
+    """
     for table in tables:
         copy_sensor_task = S3ClickstreamKeySensor(
             task_id='s3_clickstream_table_sensor_%s' % (table),
@@ -67,6 +76,9 @@ def create_branch(dag, parent_task, tables, delta, path):
             timeout=10,
         )
         copy_sensor_task.set_upstream(parent_task)
+
+        # TODO: separate retrieving these values into vars from the method call
+        # TODO: rework this config with ryan to come from mongo
 
         copy_task = create_linked_docker_operator(dag, [], '', (0, {
             'task_id': 's3_clickstream_table_copy_%s' % (table),
@@ -84,9 +96,13 @@ def create_branch(dag, parent_task, tables, delta, path):
             },
             'name': '',  # BATCH_PROCESSING_IMAGE.split(':')[0],
             'version': '',  # BATCH_PROCESSING_IMAGE.split(':')[1]
-        }), os.getenv('AIRFLOW_CLICKSTREAM_BATCH_POOL', None))
+        }), os.getenv('AIRFLOW_CLICKSTREAM_BATCH_POOL', None))  # TODO: remove the redundant None here
         copy_task.set_upstream(copy_sensor_task)
 
+
+# TODO: switch print calls to logging
+
+# TODO: wrap long method call arg lists
 
 # Query for all workflows.
 print('Querying for clickstream workflows.')
@@ -99,9 +115,9 @@ for workflow in workflows:
     default_args['app_id'] = workflow_id
 
     # Get the name of the workflow.
+    # TODO use .get
     workflow_name = workflow['name'] if 'name' in workflow else 'astronomer_clickstream_to_redshift'
 
-    # Lower and snake case the name if we have one, else just id.
     name = '{name}__etl__{id}'.format(
         id=workflow_id,
         name=case.snakecase(case.lowercase(workflow_name))
@@ -110,6 +126,7 @@ for workflow in workflows:
     print('Building DAG: {name}.').format(name=name)
 
     path = 'clickstream-data/{}/'.format(workflow_id)
+    # TODO: what is this for?  seems like a mistake (no variable, no .format call)... where does it get filled in?
     path += '{date}/'
 
     # Airflow looks at module globals for DAGs, so assign each workflow to
@@ -154,7 +171,7 @@ for workflow in workflows:
     create_branch(
         dag,
         s3_delayed_sensor,
-        list(set(workflow['tables']) - set(default_tables)),
+        list(set(workflow['tables']) - set(default_tables)),  # TODO: break this call out (isolates only custom events)
         15,
         path
     )

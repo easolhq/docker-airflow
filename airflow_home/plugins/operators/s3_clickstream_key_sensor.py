@@ -25,9 +25,14 @@ class S3ClickstreamKeySensor(BaseSensorOperator):
         self.timedelta = timedelta
 
     def poke(self, context):
+        """
+        TODO
+        """
         logging.info('Starting poke')
         hook = S3FileHook(s3_conn_id='S3_CONNECTION')
+        # TODO: where does this context['ti'] get populated from?  is this task ID?
         execution_date = context['ti'].execution_date
+        # TODO: does the datetime part here need to change since we're shifting the whole DAG back on delay?
         batch_datetime = execution_date - timedelta(
             minutes=((execution_date.minute % 15) + self.timedelta)
         )

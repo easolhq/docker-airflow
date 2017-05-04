@@ -75,6 +75,7 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
     image_name = format_image_name(activity['name'], version)
 
     # Create task id.
+    # TODO: use activity.get('task_id', '...') instead
     task_id = activity['task_id'] if 'task_id' in activity else '{index}_{name}'.format(
         index=index,
         name=format_task_name(activity['name']))
@@ -100,6 +101,7 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
     force_pull = ast.literal_eval(os.getenv('FORCE_PULL_TASK_IMAGES', 'True'))
 
     # Create final dictionary for the DockerOperator
+    # TODO: discuss with mike if the addition of pool: None here will affect other docker DAGs... should it be added when pool is None?
     params = {
         'task_id': task_id,
         'pool': pool,

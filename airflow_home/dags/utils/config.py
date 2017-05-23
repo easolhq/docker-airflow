@@ -3,7 +3,6 @@ class ClickstreamActivity(object):
     TODO
     """
 
-
     def __init__(self, workflow_id, table_name, redshift_host, redshift_port, redshift_db, redshift_user, redshift_password, redshift_schema, temp_bucket, name_ver):
         """
         TODO

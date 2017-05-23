@@ -2,6 +2,7 @@ import os
 import pymongo
 import ssl
 
+
 class MongoClient:
     """
     TODO

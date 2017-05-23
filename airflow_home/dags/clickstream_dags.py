@@ -1,192 +1,205 @@
 """
 Clickstream content ingestion via S3 bucket wildcard key into Airflow.
 """
-
-# TODO: clean up and group imports
-
-from datetime import datetime, timedelta
 from urllib import quote_plus
+import abc
+import logging
 import os
-from utils.db import MongoClient
-from utils.docker import create_linked_docker_operator
 
 from airflow import DAG
-from airflow.operators.subdag_operator import SubDagOperator
-from airflow.operators import (
-    S3ClickstreamKeySensor
-)
+from airflow.operators import S3ClickstreamKeySensor
 from airflow.operators.dummy_operator import DummyOperator
-from airflow.hooks.base_hook import CONN_ENV_PREFIX
-from fn.func import F
-import stringcase as case
 
-# TODO: move logic into a main function
+from fn.func import F
+import stringcase
+
+# TODO: make these explicit relative imports
+from utils.defaults import config_default_args
+from utils.db import MongoClient
+from utils.docker import create_linked_docker_operator_simple
+from utils.s3 import config_s3_new
+
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 S3_BUCKET = os.getenv('AWS_S3_CLICKSTREAM_BUCKET')
 BATCH_PROCESSING_IMAGE = os.getenv('CLICKSTREAM_BATCH_IMAGE')  # TODO: what is this?
-aws_key = os.getenv('AWS_ACCESS_KEY_ID', '')
-aws_secret = quote_plus(os.getenv('AWS_SECRET_ACCESS_KEY', ''))
+AWS_KEY = os.getenv('AWS_ACCESS_KEY_ID', '')
+AWS_SECRET = os.getenv('AWS_SECRET_ACCESS_KEY', '')
+config_s3_new(AWS_KEY, AWS_SECRET)
 
-os.environ[CONN_ENV_PREFIX + 'S3_CONNECTION'] = 's3://{aws_key}:{aws_secret}@S3'.format(aws_key=aws_key, aws_secret=aws_secret)
+# TODO: rework redshift config with ryan to come from mongo?
+REDSHIFT_HOST = os.getenv('REDSHIFT_HOST')
+REDSHIFT_PORT = os.getenv('REDSHIFT_PORT')
+REDSHIFT_DB = os.getenv('REDSHIFT_DB')
+REDSHIFT_USER = os.getenv('REDSHIFT_USER')
+REDSHIFT_PASSWORD = os.getenv('REDSHIFT_PASSWORD')
+REDSHIFT_SCHEMA = os.getenv('REDSHIFT_SCHEMA')
 
-now = datetime.utcnow() - timedelta(days=1)
-start_date = datetime(now.year, now.month, now.day, now.hour)
+AIRFLOW_CLICKSTREAM_BATCH_POOL = os.getenv('AIRFLOW_CLICKSTREAM_BATCH_POOL')
 
-default_args = {
-    'owner': 'astronomer',
-    'depends_on_past': False,
-    'start_date': start_date,
-    'email': 'greg@astronomer.io',
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 0,
-    'retry_delay': timedelta(minutes=5),
-    'app_id': None,
-    'copy_table': None
-}
-
-default_tables = [
-    'page',
-    'track',
-    'identify',
-    'group',
-    'screen',
-    'alias'
-]
+default_args = config_default_args()
 
 # TODO: Update Name and Version to check for exsitance and defalut to ''
 
 # TODO: Update to pull redshift information from mongo instead of env
 
 
-def create_branch(dag, parent_task, tables, delta, path):
-    """
-    TODO
-    """
-    for table in tables:
-        copy_sensor_task = S3ClickstreamKeySensor(
-            task_id='s3_clickstream_table_sensor_%s' % (table),
-            default_args=default_args,
-            dag=dag,
-            bucket_name=S3_BUCKET,
-            bucket_key=path + table,
-            timedelta=delta,
-            soft_fail=True,
-            poke_interval=5,
-            timeout=10,
-        )
-        copy_sensor_task.set_upstream(parent_task)
-
-        # TODO: separate retrieving these values into vars from the method call
-        # TODO: rework this config with ryan to come from mongo
-
-        copy_task = create_linked_docker_operator(dag, [], '', (0, {
-            'task_id': 's3_clickstream_table_copy_%s' % (table),
-            'config': {
-                'appId': workflow_id,
-                'table': table,
-                'redshift_host': os.getenv('REDSHIFT_HOST'),
-                'redshift_port': os.getenv('REDSHIFT_PORT'),
-                'redshift_db': os.getenv('REDSHIFT_DB'),
-                'redshift_user': os.getenv('REDSHIFT_USER'),
-                'redshift_password': os.getenv('REDSHIFT_PASSWORD'),
-                'redshift_schema': os.getenv('REDSHIFT_SCHEMA'),
-                'temp_bucket': S3_BUCKET,
-                'timedelta': delta
-            },
-            'name': 'aries-activity-aries-base',  # BATCH_PROCESSING_IMAGE.split(':')[0],
-            'version': '0.1'  # BATCH_PROCESSING_IMAGE.split(':')[1]
-        }), os.getenv('AIRFLOW_CLICKSTREAM_BATCH_POOL', None))  # TODO: remove the redundant None here
-        copy_task.set_upstream(copy_sensor_task)
-
-
-# TODO: switch print calls to logging
-
-# TODO: wrap long method call arg lists
-
-# Query for all workflows.
-print('Querying for clickstream workflows.')
-client = MongoClient()
-workflows = client.clickstream_configs()
-
-for workflow in workflows:
-    # Get the workflow id.
+def build_dag_id(workflow):
     workflow_id = workflow['_id']
-    default_args['app_id'] = workflow_id
+    workflow_name = workflow.get('name', 'astronomer_clickstream_to_redshift')
+    workflow_name = stringcase.snakecase(stringcase.lowercase(workflow_name))
+    dag_id = '{name}__etl__{id}'.format(id=workflow_id, name=workflow_name)
+    return dag_id
 
-    # Get the name of the workflow.
-    # TODO use .get
-    workflow_name = workflow['name'] if 'name' in workflow else 'astronomer_clickstream_to_redshift'
 
-    name = '{name}__etl__{id}'.format(
-        id=workflow_id,
-        name=case.snakecase(case.lowercase(workflow_name))
-    )
+class ClickstreamActivity(object):
 
-    print('Building DAG: {name}.').format(name=name)
+    def __init__(self, workflow_id, table_name, redshift_host, redshift_port, redshift_db, redshift_user, redshift_password, redshift_schema, temp_bucket, name_ver):
+        self.workflow_id = workflow_id
+        self.table_name = table_name
+        self.redshift_host = redshift_host
+        self.redshift_port = redshift_port
+        self.redshift_db = redshift_db
+        self.redshift_user = redshift_user
+        self.redshift_password = redshift_password
+        self.redshift_schema = redshift_schema
+        self.temp_bucket = temp_bucket
 
-    path = 'clickstream-data/{}/'.format(workflow_id)
-    # TODO: what is this for?  seems like a mistake (no variable, no .format call)... where does it get filled in?
-    path += '{date}/'
+        name, version = name_ver.split(':', 1)
+        name, version = 'aries-activity-aries-base', '0.1'
+        self.name = name
+        self.version = version
 
-    # Airflow looks at module globals for DAGs, so assign each workflow to
-    # a global variable using it's id.
-    dag = globals()[workflow_id] = DAG(
-        name,
-        default_args=default_args,
-        schedule_interval='15 * * * *')
+    @property
+    def task_id(self):
+        return 's3_clickstream_table_copy_{}'.format(self.table_name)
 
-    start = DummyOperator(
-        task_id='start',
-        dag=dag,
-    )
+    def serialize(self):
+        activity = {
+            'task_id': self.task_id,
+            'name': self.name,
+            'version': self.version,
+            'config': {
+                'appId': self.workflow_id,
+                'table': self.table_name,
+                'redshift_host': self.redshift_host,
+                'redshift_port': self.redshift_port,
+                'redshift_db': self.redshift_db,
+                'redshift_user': self.redshift_user,
+                'redshift_password': self.redshift_password,
+                'redshift_schema': self.redshift_schema,
+                'temp_bucket': self.temp_bucket,
+                'timedelta': 0
+            }
+        }
+        return activity
 
-    def_tables = DummyOperator(
-        task_id='default_tables',
-        dag=dag
-    )
-    
-    def_tables.set_upstream(start)
 
-    event_tables = DummyOperator(
-        task_id='event_tables',
-        dag=dag
-    )
+class ClickstreamEvents(object):
+    __metaclass__ = abc.ABCMeta
 
-    event_tables.set_upstream(start)
+    def __init__(self, workflow, dag, upstream_task):
+        self.workflow = workflow
+        self.dag = dag
+        self.upstream_task = upstream_task
 
-    # s3_sensor = S3ClickstreamKeySensor(
-    #     task_id='s3_clickstream_sensor',
-    #     default_args=default_args,
-    #     bucket_name=S3_BUCKET,
-    #     bucket_key=path,
-    #     soft_fail=False,
-    #     poke_interval=5,
-    #     timeout=10,
-    #     dag=dag,
-    # )
-    # s3_sensor.set_upstream(start)
-    create_branch(dag, def_tables, default_tables, 0, path)
+        path = 'clickstream-data/{}/'.format(workflow_id)
+        path += '{date}/'  # TODO: what is this for?  seems like a mistake (no variable, no .format call)... where does it get filled in?
+        self.path = path
 
-    # s3_delayed_sensor = S3ClickstreamKeySensor(
-    #     task_id='s3_clickstream_delayed_sensor',
-    #     default_args=default_args,
-    #     bucket_name=S3_BUCKET,
-    #     bucket_key=path,
-    #     timedelta=15,
-    #     soft_fail=False,
-    #     poke_interval=5,
-    #     timeout=10,
-    #     dag=dag,
-    # )
-    # s3_delayed_sensor.set_upstream(start)
-    create_branch(
-        dag,
-        event_tables,
-        list(set(workflow['tables']) - set(default_tables)),  # TODO: break this call out (isolates only custom events)
-        0,
-        path
-    )
+        self._default_events = ['page', 'track', 'identify', 'group', 'screen', 'alias']
 
-client.close()
-print 'Finished exporting clickstream DAG\'s.'
+    @property
+    def workflow_id(self):
+        return self.workflow['_id']
+
+    @property
+    def default_events(self):
+        return self._default_events
+
+    @abc.abstractmethod
+    def get_events(self):
+        raise NotImplementedError
+
+    def _create_events_branch(self, task_id):
+        tables = self.get_events()
+        tables_op = DummyOperator(task_id=task_id, dag=self.dag)
+        tables_op.set_upstream(self.upstream_task)
+
+        for table in tables:
+            sensor = S3ClickstreamKeySensor(task_id='s3_clickstream_table_sensor_{}'.format(table), default_args=default_args, dag=self.dag, bucket_name=S3_BUCKET, bucket_key=self.path + table, timedelta=0, soft_fail=True, poke_interval=5, timeout=10)
+            sensor.set_upstream(tables_op)
+
+            activity = ClickstreamActivity(workflow_id=self.workflow_id, table_name=table, redshift_host=REDSHIFT_HOST, redshift_port=REDSHIFT_PORT, redshift_db=REDSHIFT_DB, redshift_user=REDSHIFT_USER, redshift_password=REDSHIFT_PASSWORD, redshift_schema=REDSHIFT_SCHEMA, temp_bucket=S3_BUCKET, name_ver=BATCH_PROCESSING_IMAGE)
+            copy_task = create_linked_docker_operator_simple(dag=self.dag, activity=activity.serialize(), pool=AIRFLOW_CLICKSTREAM_BATCH_POOL)
+            copy_task.set_upstream(sensor)
+
+    def create_key_sensor(self):
+        raise NotImplementedError
+
+    def create_copy_operator(self):
+        raise NotImplementedError
+
+    def run(self):
+        self.create_key_sensor()
+        self.create_copy_operator()
+        self.create_branch()
+
+
+class DefaultClickstreamEvents(ClickstreamEvents):
+
+    def get_events(self):
+        """Return the set of default event names."""
+        return self.default_events
+
+    def create_branch(self):
+        """create_default_events_branch"""
+        # built-in event types
+        self._create_events_branch(task_id='default_tables')
+
+
+class CustomClickstreamEvents(ClickstreamEvents):
+
+    def __init__(self, workflow):
+        super(CustomClickstreamEvents, self).__init__(workflow)
+        # self._all_events = workflow['all']
+        self._all_events = workflow['tables']
+
+    @property
+    def all_events(self):
+        return self._all_events
+
+    def get_events(self):
+        """Return the set of custom event names."""
+        all_events = set(self.all_events)
+        default_events = set(self.default_events)
+        custom_events = list(all_events - default_events)
+        return custom_events
+
+    def create_branch(self):
+        """create_custom_events_branch"""
+        self._create_events_branch(task_id='event_tables')
+
+
+def main():
+    global default_args
+
+    client = MongoClient()
+    workflows = client.clickstream_configs()
+
+    for workflow in workflows:
+        default_args['app_id'] = workflow['_id']
+        dag = DAG(dag_id=build_dag_id(workflow), default_args=default_args, schedule_interval='15 * * * *')
+        globals()[workflow['_id']] = dag
+        start = DummyOperator(task_id='start', dag=dag)
+        DefaultClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start).run()
+        CustomClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start).run()
+
+    client.close()
+    logger.info('Finished exporting clickstream DAGs.')
+
+
+if __name__ == '__main__':
+    main()

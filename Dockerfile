@@ -66,6 +66,7 @@ RUN set -ex \
     && pip install cov-core==1.15.0 \
     && pip install coverage==4.2 \
     && pip install pycodestyle==2.2.0 \
+    && pip install marshmallow==2.13.5 \
 
     && pip install git+https://github.com/astronomerio/incubator-airflow@astronomer-fixes#egg=incubator-airflow[s3,postgres,password] \
     # && pip install -e /incubator-airflow \

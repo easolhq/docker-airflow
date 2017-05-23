@@ -47,6 +47,17 @@ def create_docker_operator(params):
     return DockerOperator(**docker_params)
 
 
+def create_linked_docker_operator_simple(dag, activity, pool=None):
+    """
+    Adapter to work around the tuple in called function signature.
+
+    It's not possible to use full kwargs with a tuple arg; also, we don't use
+    most of these args with Clickstream DAGs.
+    """
+    activity_tuple = (0, activity)
+    return create_linked_docker_operator(dag, [], '', activity_tuple, pool)
+
+
 def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, activity), pool=None):
     # Get the previous tasks id for xcom.
     prev_task_id = (

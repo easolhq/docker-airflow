@@ -142,11 +142,17 @@ def main():
 
     for workflow in workflows:
         default_args['app_id'] = workflow['_id']
+
         dag = DAG(dag_id=build_dag_id(workflow), default_args=default_args, schedule_interval='15 * * * *')
         globals()[workflow['_id']] = dag
+
         start = DummyOperator(task_id='start', dag=dag)
-        DefaultClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start).run()
-        CustomClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start).run()
+
+        default_events = DefaultClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start)
+        default_events.run()
+
+        custom_events = CustomClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start)
+        custom_events.run()
 
     client.close()
     logger.info('Finished exporting clickstream DAGs.')

@@ -3,8 +3,14 @@ import pymongo
 import ssl
 
 class MongoClient:
+    """
+    TODO
+    """
 
     def __init__(self):
+        """
+        TODO
+        """
         # Get mongo url.
         mongo_url = os.getenv('MONGO_URL', '')
 
@@ -83,17 +89,32 @@ class MongoClient:
         ]
 
     def workflow_configs(self):
+        """
+        TODO
+        """
         return self.db.workflows.aggregate(self.pipeline)
 
     def webhook_configs(self):
+        """
+        TODO
+        """
         return self.db.webhookConfigs.aggregate(self.pipeline)
 
     def ftp_configs(self):
+        """
+        TODO
+        """
         return self.db.ftpConfigs.aggregate(self.pipeline)
 
     def clickstream_configs(self):
+        """
+        TODO
+        """
         # TODO: explain
         return self.db.clickstreamData.find({})
 
     def close(self):
+        """
+        TODO
+        """
         self.client.close()

@@ -1,4 +1,11 @@
+"""
+TODO
+"""
+
 def build_dag_id(workflow):
+    """
+    TODO
+    """
     workflow_id = workflow['_id']
     workflow_name = workflow.get('name', 'astronomer_clickstream_to_redshift')
     workflow_name = stringcase.snakecase(stringcase.lowercase(workflow_name))

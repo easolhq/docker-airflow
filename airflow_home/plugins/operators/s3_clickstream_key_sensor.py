@@ -1,3 +1,7 @@
+"""
+TODO
+"""
+
 import logging
 from datetime import timedelta
 
@@ -12,13 +16,16 @@ config_s3()
 
 class S3ClickstreamKeySensor(BaseSensorOperator):
     """
-    Detect a execution-date bound file path in S3.
+    Detect an execution-date bound file path in S3.
     """
 
     template_fields = ('bucket_key', 'bucket_name')
 
     @apply_defaults
     def __init__(self, bucket_key, bucket_name, timedelta=0, *args, **kwargs):
+        """
+        TODO
+        """
         super(S3ClickstreamKeySensor, self).__init__(*args, **kwargs)
         self.bucket_name = bucket_name
         self.bucket_key = bucket_key

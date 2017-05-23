@@ -2,6 +2,9 @@ from dags.utils.flatten import flatten_config
 
 
 def test_flatten_config():
+    """
+    TODO
+    """
     # arrange
     vpn_connection = {'code': 'vpn_connection_code', 'details': {'remote_host': '192.168.1.0'}}
     connection = {'code': 'connection_code', 'details': {'host': 'example.com'}, 'vpnConnection': vpn_connection}
@@ -18,18 +21,27 @@ def test_flatten_config():
 
 
 def test_returns_copy():
+    """
+    TODO
+    """
     config = {}
     flattened_config = flatten_config(config)
     assert config is not flattened_config
 
 
 def test_without_connection():
+    """
+    TODO
+    """
     config = {'name': 'test_name'}
     flattened_config = flatten_config(config)
     assert config['name'] == 'test_name'
 
 
 def test_ignores_mongoose_fields():
+    """
+    TODO
+    """
     connection = {'_id': '12345', 'details': {'host': 'example.com'}, 'updatedAt': '02-25-2017', 'createdAt': '02-25-2017', '__v': 0}
     config = {'connection': connection}
     flattened_config = flatten_config(config)

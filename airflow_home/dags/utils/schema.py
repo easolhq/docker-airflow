@@ -1,3 +1,7 @@
+"""
+TODO
+"""
+
 import datetime
 
 from marshmallow import Schema, fields, post_load
@@ -5,18 +9,30 @@ from marshmallow.validate import Range
 
 
 class RedshiftConfig(object):
+    """
+    TODO
+    """
 
     def __init__(self, host, port):
+        """
+        TODO
+        """
         self.host = host
         self.port = port
         self.created_at = datetime.datetime.now()
         self.timedelta = 0
 
     def __repr__(self):
+        """
+        TODO
+        """
         return '<Redshift(host={self.host!r})>'.format(self=self)
 
 
 class RedshiftConfigSchema(Schema):
+    """
+    TODO
+    """
     workflow_id = fields.Str(required=True, load_from='AppId', dump_to='AppId')
     host = fields.Str(required=True)
     port = fields.Integer(required=True, validate=Range(min=0, max=65535))
@@ -24,14 +40,23 @@ class RedshiftConfigSchema(Schema):
 
     @post_load
     def make_redshift(self, data):
+        """
+        TODO
+        """
         return Redshift(**data)
 
 
 class ClickstreamConfig(object):
+    """
+    TODO
+    """
     pass
 
 
 class ClickstreamConfigSchema(Schema):
+    """
+    TODO
+    """
     temp_bucket = fields.Str(required=True)
     redshift = fields.Nested(RedshiftSchema, required=True)
 
@@ -48,6 +73,9 @@ class ClickstreamConfigSchema(Schema):
 
 
 def main():
+    """
+    TODO
+    """
     redshift_data = {
         'AppId': '1234',
         'host': 'myhost',

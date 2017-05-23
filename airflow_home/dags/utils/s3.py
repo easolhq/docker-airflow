@@ -1,3 +1,7 @@
+"""
+TODO
+"""
+
 from urllib import quote_plus
 import os
 
@@ -10,6 +14,9 @@ def setenv(key, value):
 
 
 def build_s3_url(aws_key, aws_secret):
+    """
+    TODO
+    """
     return 's3://{key}:{secret}@S3'.format(key=aws_key, secret=aws_secret)
 
 

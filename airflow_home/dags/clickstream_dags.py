@@ -1,6 +1,7 @@
 """
 Clickstream content ingestion via S3 bucket wildcard key into Airflow.
 """
+
 from urllib import quote_plus
 import abc
 import logging
@@ -20,7 +21,6 @@ from utils.db import MongoClient
 from utils.docker import create_linked_docker_operator_simple
 from utils.redshift import build_dag_id
 from utils.s3 import config_s3_new
-
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -49,9 +49,16 @@ default_args = config_default_args()
 
 
 class ClickstreamEvents(object):
+    """
+    TODO
+    """
+
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, workflow, dag, upstream_task):
+        """
+        TODO
+        """
         self.workflow = workflow
         self.dag = dag
         self.upstream_task = upstream_task
@@ -64,17 +71,29 @@ class ClickstreamEvents(object):
 
     @property
     def workflow_id(self):
+        """
+        TODO
+        """
         return self.workflow['_id']
 
     @property
     def default_events(self):
+        """
+        TODO
+        """
         return self._default_events
 
     @abc.abstractmethod
     def get_events(self):
+        """
+        TODO
+        """
         raise NotImplementedError
 
     def _create_events_branch(self, task_id):
+        """
+        TODO
+        """
         tables = self.get_events()
         tables_op = DummyOperator(task_id=task_id, dag=self.dag)
         tables_op.set_upstream(self.upstream_task)
@@ -88,18 +107,30 @@ class ClickstreamEvents(object):
             copy_task.set_upstream(sensor)
 
     def create_key_sensor(self):
+        """
+        TODO
+        """
         raise NotImplementedError
 
     def create_copy_operator(self):
+        """
+        TODO
+        """
         raise NotImplementedError
 
     def run(self):
+        """
+        TODO
+        """
         self.create_key_sensor()
         self.create_copy_operator()
         self.create_branch()
 
 
 class DefaultClickstreamEvents(ClickstreamEvents):
+    """
+    TODO
+    """
 
     def get_events(self):
         """Return the set of default event names."""
@@ -112,14 +143,23 @@ class DefaultClickstreamEvents(ClickstreamEvents):
 
 
 class CustomClickstreamEvents(ClickstreamEvents):
+    """
+    TODO
+    """
 
     def __init__(self, workflow):
+        """
+        TODO
+        """
         super(CustomClickstreamEvents, self).__init__(workflow)
         # self._all_events = workflow['all']
         self._all_events = workflow['tables']
 
     @property
     def all_events(self):
+        """
+        TODO
+        """
         return self._all_events
 
     def get_events(self):
@@ -135,6 +175,9 @@ class CustomClickstreamEvents(ClickstreamEvents):
 
 
 def main():
+    """
+    TODO
+    """
     global default_args
 
     client = MongoClient()

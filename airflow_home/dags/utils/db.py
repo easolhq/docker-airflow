@@ -1,7 +1,6 @@
 import os
 import pymongo
 import ssl
-from bson.objectid import ObjectId
 
 class MongoClient:
 

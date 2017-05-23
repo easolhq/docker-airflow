@@ -14,9 +14,11 @@ from fn.func import F
 import stringcase
 
 # TODO: make these explicit relative imports
+from utils.config import ClickstreamActivity
 from utils.defaults import config_default_args
 from utils.db import MongoClient
 from utils.docker import create_linked_docker_operator_simple
+from utils.redshift import build_dag_id
 from utils.s3 import config_s3_new
 
 
@@ -44,57 +46,6 @@ default_args = config_default_args()
 # TODO: Update Name and Version to check for exsitance and defalut to ''
 
 # TODO: Update to pull redshift information from mongo instead of env
-
-
-def build_dag_id(workflow):
-    workflow_id = workflow['_id']
-    workflow_name = workflow.get('name', 'astronomer_clickstream_to_redshift')
-    workflow_name = stringcase.snakecase(stringcase.lowercase(workflow_name))
-    dag_id = '{name}__etl__{id}'.format(id=workflow_id, name=workflow_name)
-    return dag_id
-
-
-class ClickstreamActivity(object):
-
-    def __init__(self, workflow_id, table_name, redshift_host, redshift_port, redshift_db, redshift_user, redshift_password, redshift_schema, temp_bucket, name_ver):
-        self.workflow_id = workflow_id
-        self.table_name = table_name
-        self.redshift_host = redshift_host
-        self.redshift_port = redshift_port
-        self.redshift_db = redshift_db
-        self.redshift_user = redshift_user
-        self.redshift_password = redshift_password
-        self.redshift_schema = redshift_schema
-        self.temp_bucket = temp_bucket
-
-        name, version = name_ver.split(':', 1)
-        name, version = 'aries-activity-aries-base', '0.1'
-        self.name = name
-        self.version = version
-
-    @property
-    def task_id(self):
-        return 's3_clickstream_table_copy_{}'.format(self.table_name)
-
-    def serialize(self):
-        activity = {
-            'task_id': self.task_id,
-            'name': self.name,
-            'version': self.version,
-            'config': {
-                'appId': self.workflow_id,
-                'table': self.table_name,
-                'redshift_host': self.redshift_host,
-                'redshift_port': self.redshift_port,
-                'redshift_db': self.redshift_db,
-                'redshift_user': self.redshift_user,
-                'redshift_password': self.redshift_password,
-                'redshift_schema': self.redshift_schema,
-                'temp_bucket': self.temp_bucket,
-                'timedelta': 0
-            }
-        }
-        return activity
 
 
 class ClickstreamEvents(object):

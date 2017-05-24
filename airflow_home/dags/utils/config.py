@@ -7,7 +7,7 @@ class ClickstreamActivity(object):
     """Config for clickstream event classes."""
 
     def __init__(self, workflow_id, table_name, redshift_host, redshift_port, redshift_db, redshift_user,
-                 redshift_password, redshift_schema, temp_bucket, name_ver):
+                 redshift_password, redshift_encrypted, temp_bucket, name_ver):
         """Initialize clickstream event params."""
         self.workflow_id = workflow_id
         self.table_name = table_name
@@ -16,13 +16,17 @@ class ClickstreamActivity(object):
         self.redshift_db = redshift_db
         self.redshift_user = redshift_user
         self.redshift_password = redshift_password
-        self.redshift_schema = redshift_schema
+        self.redshift_encrypted = redshift_encrypted
         self.temp_bucket = temp_bucket
 
         name, version = name_ver.split(':', 1)
         name, version = 'aries-activity-aries-base', '0.1'
         self.name = name
         self.version = version
+
+    @property
+    def redshift_schema(self):
+        return self.workflow_id
 
     @property
     def task_id(self):
@@ -45,7 +49,8 @@ class ClickstreamActivity(object):
                 'redshift_password': self.redshift_password,
                 'redshift_schema': self.redshift_schema,
                 'temp_bucket': self.temp_bucket,
-                'timedelta': 0
+                'timedelta': 0,
+                '_encrypted': self.redshift_encrypted,
             }
         }
         return activity

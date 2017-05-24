@@ -31,21 +31,11 @@ AWS_KEY = os.getenv('AWS_ACCESS_KEY_ID', '')
 AWS_SECRET = os.getenv('AWS_SECRET_ACCESS_KEY', '')
 config_s3_new(AWS_KEY, AWS_SECRET)
 
-# TODO: rework redshift config with ryan to come from mongo?
-REDSHIFT_HOST = os.getenv('REDSHIFT_HOST')
-REDSHIFT_PORT = os.getenv('REDSHIFT_PORT')
-REDSHIFT_DB = os.getenv('REDSHIFT_DB')
-REDSHIFT_USER = os.getenv('REDSHIFT_USER')
-REDSHIFT_PASSWORD = os.getenv('REDSHIFT_PASSWORD')
-REDSHIFT_SCHEMA = os.getenv('REDSHIFT_SCHEMA')
-
 AIRFLOW_CLICKSTREAM_BATCH_POOL = os.getenv('AIRFLOW_CLICKSTREAM_BATCH_POOL')
 
 default_args = config_default_args()
 
 # TODO: Update Name and Version to check for exsitance and defalut to ''
-
-# TODO: Update to pull redshift information from mongo instead of env
 
 
 class ClickstreamEvents(object):
@@ -56,6 +46,7 @@ class ClickstreamEvents(object):
     def __init__(self, workflow, dag, upstream_task):
         """Initialize the clickstream config params and default event types."""
         self.workflow = workflow
+        self.config = workflow['config']
         self.dag = dag
         self.upstream_task = upstream_task
         self._default_events = ['page', 'track', 'identify', 'group', 'screen', 'alias']
@@ -109,12 +100,12 @@ class ClickstreamEvents(object):
         activity = ClickstreamActivity(
             workflow_id=self.workflow_id,
             table_name=table,
-            redshift_host=REDSHIFT_HOST,
-            redshift_port=REDSHIFT_PORT,
-            redshift_db=REDSHIFT_DB,
-            redshift_user=REDSHIFT_USER,
-            redshift_password=REDSHIFT_PASSWORD,
-            redshift_schema=REDSHIFT_SCHEMA,
+            redshift_host=self.config['host'],
+            redshift_port=self.config['port'],
+            redshift_db=self.config['db'],
+            redshift_user=self.config['user'],
+            redshift_password=self.config['pw'],
+            redshift_encrypted=self.config['_encrypted'],
             temp_bucket=S3_BUCKET,
             name_ver=BATCH_PROCESSING_IMAGE
         )
@@ -148,8 +139,7 @@ class CustomClickstreamEvents(ClickstreamEvents):
     def __init__(self, workflow):
         """Initialize the combined event list."""
         super(CustomClickstreamEvents, self).__init__(workflow)
-        # self._all_events = workflow['all']
-        self._all_events = workflow['tables']
+        self._all_events = self.config['tables']
 
     @property
     def all_events(self):

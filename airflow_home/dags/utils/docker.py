@@ -9,7 +9,7 @@ import os
 from datetime import timedelta
 
 from airflow.operators.docker_operator import DockerOperator
-from .flatten import flatten_config
+from utils.flatten import flatten_config
 
 
 # Trim aries-activity- off.

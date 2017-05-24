@@ -111,8 +111,8 @@ class MongoClient:
         """
         TODO
         """
-        # TODO: explain
-        return self.db.clickstreamData.find({})
+        # TODO: when v2 comes out will need to add a look up for the connection
+        return self.db.integrationConfigs.find({'integration': 'amazon-redshift', 'config.tables': {'$exists': True}})
 
     def close(self):
         """

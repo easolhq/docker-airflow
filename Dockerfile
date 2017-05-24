@@ -1,4 +1,4 @@
-FROM debian:8.6
+FROM python:3.6.1
 MAINTAINER schnie <greg@astronomer.io>
 
 # Never prompts the user for choices on installation/configuration of packages
@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV TERM linux
 
 # Airflow
-ARG AIRFLOW_VERSION=1.7.1.3
+ARG AIRFLOW_VERSION=1.8.1
 ENV AIRFLOW_HOME /airflow_home
 
 # Define en_US.
@@ -17,11 +17,11 @@ ENV LC_CTYPE en_US.UTF-8
 ENV LC_MESSAGES en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 
-# Install dependencies.
+ADD requirements.txt .
+
+# Install system dependencies.
 RUN set -ex \
     && buildDeps=' \
-        python-pip \
-        python-dev \
         libkrb5-dev \
         libsasl2-dev \
         libssl-dev \
@@ -42,36 +42,11 @@ RUN set -ex \
         netcat \
         locales \
         dnsutils \
-        mesos \
-        supervisor \
     && apt-get install -yqq -t jessie-backports python-requests cython libpq-dev \
     && sed -i 's/^# en_US.UTF-8 UTF-8$/en_US.UTF-8 UTF-8/g' /etc/locale.gen \
     && locale-gen \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
-    # && useradd -ms /bin/bash -d ${AIRFLOW_HOME} airflow \
-    && python -m pip install -U pip \
-    && pip install pytz==2015.7 \
-    && pip install cryptography==1.7.2 \
-    && pip install pyOpenSSL==16.2.0 \
-    && pip install ndg-httpsclient==0.4.2 \
-    && pip install pyasn1==0.1.9 \
-    && pip install protobuf==3.2.0 \
-    && pip install pydash==3.4.3 \
-    && pip install pymongo==3.2.2 \
-    && pip install stringcase==1.0.6 \
-    && pip install fn==0.4.3 \
-    && pip install docker-py==1.8.1 \
-    && pip install python-decouple==3.0 \
-    && pip install nose2==0.6.5 \
-    && pip install cov-core==1.15.0 \
-    && pip install coverage==4.2 \
-    && pip install pycodestyle==2.2.0 \
-    && pip install marshmallow==2.13.5 \
-
-    && pip install git+https://github.com/astronomerio/incubator-airflow@astronomer-fixes#egg=incubator-airflow[s3,postgres,password] \
-    # && pip install -e /incubator-airflow \
-    # && pip install airflow==$AIRFLOW_VERSION \
-
+    && pip install -r requirements.txt \
     && apt-get remove --purge -yqq $buildDeps libpq-dev \
     && apt-get clean \
     && rm -rf \
@@ -83,10 +58,7 @@ RUN set -ex \
         /usr/share/doc-base
 
 # Set python path so airflow can find pip installed packages.
-ENV PYTHONPATH=${PYTHONPATH}:/usr/lib/python2.7/site-packages/
-
-# Add supervisor configs.
-ADD config /etc/supervisor/conf.d/
+ENV PYTHONPATH=${PYTHONPATH}:${AIRFLOW_HOME}
 
 # Add scripts.
 ADD script script

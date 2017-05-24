@@ -58,11 +58,6 @@ class ClickstreamEvents(object):
         self.workflow = workflow
         self.dag = dag
         self.upstream_task = upstream_task
-
-        path = 'clickstream-data/{}/'.format(workflow_id)
-        path += '{date}/'  # TODO: what is this for?  seems like a mistake (no variable, no .format call)... where does it get filled in?
-        self.path = path
-
         self._default_events = ['page', 'track', 'identify', 'group', 'screen', 'alias']
 
     @property
@@ -100,7 +95,8 @@ class ClickstreamEvents(object):
             default_args=default_args,
             dag=self.dag,
             bucket_name=S3_BUCKET,
-            bucket_key=self.path + table,
+            workflow_id=self.workflow_id,
+            table=table,
             timedelta=0,
             soft_fail=True,
             poke_interval=5,

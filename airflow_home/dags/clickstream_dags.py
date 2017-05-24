@@ -49,16 +49,12 @@ default_args = config_default_args()
 
 
 class ClickstreamEvents(object):
-    """
-    TODO
-    """
+    """Base class for sensing and processing clickstream events."""
 
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, workflow, dag, upstream_task):
-        """
-        TODO
-        """
+        """Initialize the clickstream config params and default event types."""
         self.workflow = workflow
         self.dag = dag
         self.upstream_task = upstream_task
@@ -71,29 +67,21 @@ class ClickstreamEvents(object):
 
     @property
     def workflow_id(self):
-        """
-        TODO
-        """
+        """Get the clickstream config workflow ID."""
         return self.workflow['_id']
 
     @property
     def default_events(self):
-        """
-        TODO
-        """
+        """Get the clickstream default event types."""
         return self._default_events
 
     @abc.abstractmethod
     def get_events(self):
-        """
-        TODO
-        """
+        """Get the clickstream events relevant to the subclass (to be implemented in each subclass)."""
         raise NotImplementedError
 
     def _create_events_branch(self, task_id):
-        """
-        TODO
-        """
+        """Create the DAG branch with sensor and operator (to be called by each subclass)."""
         tables = self.get_events()
         tables_op = DummyOperator(task_id=task_id, dag=self.dag)
         tables_op.set_upstream(self.upstream_task)
@@ -107,59 +95,44 @@ class ClickstreamEvents(object):
             copy_task.set_upstream(sensor)
 
     def create_key_sensor(self):
-        """
-        TODO
-        """
+        """Create the S3 key sensor (to be implemented in each subclass)."""
         raise NotImplementedError
 
     def create_copy_operator(self):
-        """
-        TODO
-        """
+        """Create the copy task (to be implemented in each subclass)."""
         raise NotImplementedError
 
     def run(self):
-        """
-        TODO
-        """
+        """Run the tasks of this branch."""
         self.create_key_sensor()
         self.create_copy_operator()
         self.create_branch()
 
 
 class DefaultClickstreamEvents(ClickstreamEvents):
-    """
-    TODO
-    """
+    """Concrete class for sensing and processing default clickstream events."""
 
     def get_events(self):
         """Return the set of default event names."""
         return self.default_events
 
     def create_branch(self):
-        """create_default_events_branch"""
-        # built-in event types
+        """Create the branch for built-in events types."""
         self._create_events_branch(task_id='default_tables')
 
 
 class CustomClickstreamEvents(ClickstreamEvents):
-    """
-    TODO
-    """
+    """Concrete class for sensing and processing custom clickstream events."""
 
     def __init__(self, workflow):
-        """
-        TODO
-        """
+        """Initialize the combined event list."""
         super(CustomClickstreamEvents, self).__init__(workflow)
         # self._all_events = workflow['all']
         self._all_events = workflow['tables']
 
     @property
     def all_events(self):
-        """
-        TODO
-        """
+        """Return a list of all events."""
         return self._all_events
 
     def get_events(self):
@@ -170,14 +143,12 @@ class CustomClickstreamEvents(ClickstreamEvents):
         return custom_events
 
     def create_branch(self):
-        """create_custom_events_branch"""
+        """Create the branch for custom event types."""
         self._create_events_branch(task_id='event_tables')
 
 
 def main():
-    """
-    TODO
-    """
+    """Create clickstream DAG with branches for clickstream events grouped by type."""
     global default_args
 
     client = MongoClient()

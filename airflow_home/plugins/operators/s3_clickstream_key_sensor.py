@@ -15,16 +15,14 @@ config_s3()
 
 
 class S3ClickstreamKeySensor(BaseSensorOperator):
-    """
-    Detect an execution-date bound file path in S3.
-    """
+    """Detect an execution-date bound file path in S3."""
 
     template_fields = ('bucket_key', 'bucket_name')
 
     @apply_defaults
     def __init__(self, bucket_key, bucket_name, timedelta=0, *args, **kwargs):
         """
-        TODO
+        Initialize sensor.
         """
         super(S3ClickstreamKeySensor, self).__init__(*args, **kwargs)
         self.bucket_name = bucket_name
@@ -32,9 +30,7 @@ class S3ClickstreamKeySensor(BaseSensorOperator):
         self.timedelta = timedelta
 
     def poke(self, context):
-        """
-        TODO
-        """
+        """Poke for clickstream event files."""
         logging.info('Starting poke')
         hook = S3FileHook(s3_conn_id='S3_CONNECTION')
         # TODO: where does this context['ti'] get populated from?  is this task ID?

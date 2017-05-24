@@ -1,12 +1,12 @@
+"""
+Clickstream config.
+"""
+
 class ClickstreamActivity(object):
-    """
-    TODO
-    """
+    """Config for clickstream event classes."""
 
     def __init__(self, workflow_id, table_name, redshift_host, redshift_port, redshift_db, redshift_user, redshift_password, redshift_schema, temp_bucket, name_ver):
-        """
-        TODO
-        """
+        """Initialize clickstream event params."""
         self.workflow_id = workflow_id
         self.table_name = table_name
         self.redshift_host = redshift_host
@@ -24,15 +24,11 @@ class ClickstreamActivity(object):
 
     @property
     def task_id(self):
-        """
-        TODO
-        """
+        """Get clickstream task id."""
         return 's3_clickstream_table_copy_{}'.format(self.table_name)
 
     def serialize(self):
-        """
-        TODO
-        """
+        """Generate config as a nested dict."""
         activity = {
             'task_id': self.task_id,
             'name': self.name,

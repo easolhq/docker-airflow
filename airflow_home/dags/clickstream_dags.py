@@ -87,11 +87,36 @@ class ClickstreamEvents(object):
         tables_op.set_upstream(self.upstream_task)
 
         for table in tables:
-            sensor = S3ClickstreamKeySensor(task_id='s3_clickstream_table_sensor_{}'.format(table), default_args=default_args, dag=self.dag, bucket_name=S3_BUCKET, bucket_key=self.path + table, timedelta=0, soft_fail=True, poke_interval=5, timeout=10)
+            sensor = S3ClickstreamKeySensor(
+                task_id='s3_clickstream_table_sensor_{}'.format(table),
+                default_args=default_args,
+                dag=self.dag,
+                bucket_name=S3_BUCKET,
+                bucket_key=self.path + table,
+                timedelta=0,
+                soft_fail=True,
+                poke_interval=5,
+                timeout=10
+            )
             sensor.set_upstream(tables_op)
 
-            activity = ClickstreamActivity(workflow_id=self.workflow_id, table_name=table, redshift_host=REDSHIFT_HOST, redshift_port=REDSHIFT_PORT, redshift_db=REDSHIFT_DB, redshift_user=REDSHIFT_USER, redshift_password=REDSHIFT_PASSWORD, redshift_schema=REDSHIFT_SCHEMA, temp_bucket=S3_BUCKET, name_ver=BATCH_PROCESSING_IMAGE)
-            copy_task = create_linked_docker_operator_simple(dag=self.dag, activity=activity.serialize(), pool=AIRFLOW_CLICKSTREAM_BATCH_POOL)
+            activity = ClickstreamActivity(
+                workflow_id=self.workflow_id,
+                table_name=table,
+                redshift_host=REDSHIFT_HOST,
+                redshift_port=REDSHIFT_PORT,
+                redshift_db=REDSHIFT_DB,
+                redshift_user=REDSHIFT_USER,
+                redshift_password=REDSHIFT_PASSWORD,
+                redshift_schema=REDSHIFT_SCHEMA,
+                temp_bucket=S3_BUCKET,
+                name_ver=BATCH_PROCESSING_IMAGE
+            )
+            copy_task = create_linked_docker_operator_simple(
+                dag=self.dag,
+                activity=activity.serialize(),
+                pool=AIRFLOW_CLICKSTREAM_BATCH_POOL
+            )
             copy_task.set_upstream(sensor)
 
     def create_key_sensor(self):

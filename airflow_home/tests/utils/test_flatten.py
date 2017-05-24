@@ -1,4 +1,4 @@
-from dags.utils.flatten import flatten_config
+from utils.flatten import flatten_config
 
 
 def test_flatten_config():

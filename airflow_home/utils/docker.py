@@ -5,7 +5,7 @@ import os
 from datetime import timedelta
 
 from airflow.operators.docker_operator import DockerOperator
-from .flatten import flatten_config
+from utils.flatten import flatten_config
 
 
 # Trim aries-activity- off.
@@ -47,7 +47,21 @@ def create_docker_operator(params):
     return DockerOperator(**docker_params)
 
 
-def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, activity)):
+def create_linked_docker_operator(dag, activity_list, initial_task_id, activity_tuple, pool=None, resources=None):
+    """
+    Creates a DockerOperator from the activity in activity_tuple,
+    configured to pull Xcoms from the previous task
+    :param: activity_list: The full activity list for the workflow
+    :type: activity_list: list
+    :param initial_task_id: The id of the initial task
+    :type initial_task_id: string
+    :param resources: an instance of Resources. Defines resources for the operator when ran by the executor
+    :type resources: Resources
+    :param activity_tuple: A tuple consisting of the index and activity
+    :type activity_tuple: tuple (index, activity)
+    :return DockerOperator
+    """
+    index, activity = activity_tuple
     # Get the previous tasks id for xcom.
     prev_task_id = (
         initial_task_id if index is 0
@@ -60,6 +74,7 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
         '{{ task_instance.xcom_pull(task_ids=params.prev_task_id) }}'
         '{{ params.config }}'
         '{{ ts }}'
+        '{{ next_execution_date.isoformat() if next_execution_date != None else '' }}'
     """
 
     # Get config.
@@ -75,7 +90,8 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
     image_name = format_image_name(activity['name'], version)
 
     # Create task id.
-    task_id = '{index}_{name}'.format(
+    # TODO: use activity.get('task_id', '...') instead
+    task_id = activity['task_id'] if 'task_id' in activity else '{index}_{name}'.format(
         index=index,
         name=format_task_name(activity['name']))
 
@@ -92,20 +108,23 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, (index, a
         'AWS_SECRET_ACCESS_KEY': os.getenv('AWS_SECRET_ACCESS_KEY', ''),
         'AWS_REGION': os.getenv('AWS_REGION', ''),
         'AWS_S3_TEMP_BUCKET': os.getenv('AWS_S3_TEMP_BUCKET', ''),
-        'ARIES_REMOVE_FILES_AFTER_TASK': 'TRUE'
+        'AWS_S3_CLICKSTREAM_BUCKET': os.getenv('AWS_S3_CLICKSTREAM_BUCKET', '')
     }
 
     # Force pull in prod, use local in dev.
     force_pull = ast.literal_eval(os.getenv('FORCE_PULL_TASK_IMAGES', 'True'))
 
     # Create final dictionary for the DockerOperator
+    # TODO: discuss with mike if the addition of pool: None here will affect other docker DAGs... should it be added when pool is None?
     params = {
         'task_id': task_id,
+        'pool': pool,
         'image': image_name,
         'environment': env,
         'privileged': privileged,
         'command': command,
         'params': params,
+        'resources': resources,
         'force_pull': force_pull,
         'execution_timeout': execution_timeout,
         'dag': dag

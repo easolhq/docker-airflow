@@ -2,10 +2,12 @@
 Clickstream config.
 """
 
+
 class ClickstreamActivity(object):
     """Config for clickstream event classes."""
 
-    def __init__(self, workflow_id, table_name, redshift_host, redshift_port, redshift_db, redshift_user, redshift_password, redshift_schema, temp_bucket, name_ver):
+    def __init__(self, workflow_id, table_name, redshift_host, redshift_port, redshift_db, redshift_user,
+                 redshift_password, redshift_schema, temp_bucket, name_ver):
         """Initialize clickstream event params."""
         self.workflow_id = workflow_id
         self.table_name = table_name

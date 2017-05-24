@@ -183,5 +183,4 @@ def main():
     logger.info('Finished exporting clickstream DAGs.')
 
 
-if __name__ == '__main__':
-    main()
+main()

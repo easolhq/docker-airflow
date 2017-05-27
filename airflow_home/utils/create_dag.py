@@ -23,6 +23,9 @@ def resources_for_workflow(workflow):
     if isinstance(organization, dict) and organization.get('vpc') is True:
         organizationId = str(organization.get('_id'))
         return dict(organizationId=organizationId)
+    else:
+        # all tasks default to run in astronomer vpc
+        return dict(organizationId='astronomer')
 
 
 def create_tasks(dag, workflow):

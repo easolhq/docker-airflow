@@ -64,6 +64,10 @@ class ClickstreamEvents(object):
         """Get the clickstream events relevant to the subclass (to be implemented in each subclass)."""
         raise NotImplementedError
 
+    @abc.abstractproperty
+    def event_group_name(self):
+        raise NotImplementedError
+
     def _create_events_branch(self, task_id):
         """Create the DAG branch with sensor and operator (to be called by each subclass)."""
         tables = self.get_events()
@@ -89,7 +93,8 @@ class ClickstreamEvents(object):
             timedelta=0,
             soft_fail=True,
             poke_interval=5,
-            timeout=10
+            timeout=10,
+            event_group=self.event_group_name
         )
         return sensor
 
@@ -122,6 +127,10 @@ class ClickstreamEvents(object):
 class StandardClickstreamEvents(ClickstreamEvents):
     """Concrete class for sensing and processing built-in clickstream events."""
 
+    @property
+    def event_group_name(self):
+        return 'standard'
+
     def get_events(self):
         """Return the set of built-in event names."""
         return self.standard_events
@@ -143,6 +152,10 @@ class CustomClickstreamEvents(ClickstreamEvents):
     def all_events(self):
         """Return a list of all events."""
         return self._all_events
+
+    @property
+    def event_group_name(self):
+        return 'custom'
 
     def get_events(self):
         """Return the set of custom event names."""

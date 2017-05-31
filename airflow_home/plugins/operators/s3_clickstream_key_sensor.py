@@ -20,7 +20,7 @@ class S3ClickstreamKeySensor(BaseSensorOperator):
     template_fields = ('bucket_key', 'bucket_name')
 
     @apply_defaults
-    def __init__(self, bucket_name, workflow_id, table, event_group, timedelta=0, *args, **kwargs):
+    def __init__(self, bucket_name, workflow_id, app_id, table, event_group, timedelta=0, *args, **kwargs):
         """Initialize sensor."""
         super(S3ClickstreamKeySensor, self).__init__(*args, **kwargs)
         self.bucket_name = bucket_name
@@ -28,6 +28,7 @@ class S3ClickstreamKeySensor(BaseSensorOperator):
         self.workflow_id = workflow_id
         self.table = table
         self.event_group = event_group
+        self.app_id = app_id
         self.timedelta = timedelta
 
     def _build_s3_key(self, execution_date):
@@ -35,8 +36,8 @@ class S3ClickstreamKeySensor(BaseSensorOperator):
         # TODO: does the datetime part here need to change since we're shifting the whole DAG back on delay?
         batch_datetime = execution_date - timedelta(minutes=15)
         batch_datetime_str = batch_datetime.strftime('%Y-%m-%dT%H')
-        key = 'clickstream-data/{workflow_id}/{date}/{group}/{table}'.format(
-            workflow_id=self.workflow_id,
+        key = 'apps/{app_id}/{date}/{group}/{table}'.format(
+            app_id=self.app_id,
             date=batch_datetime_str,
             group=self.event_group,
             table=self.table

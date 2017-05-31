@@ -2,7 +2,7 @@
 Clickstream content ingestion via S3 bucket wildcard key into Airflow.
 """
 
-from urllib import quote_plus
+# from urllib.parse import quote_plus
 import abc
 import logging
 import os
@@ -11,10 +11,8 @@ from airflow import DAG
 from airflow.operators import S3ClickstreamKeySensor
 from airflow.operators.dummy_operator import DummyOperator
 
-from fn.func import F
-import stringcase
+# from fn.func import F
 
-# TODO: make these explicit relative imports
 from utils.config import ClickstreamActivity
 from utils.defaults import config_default_args
 from utils.db import MongoClient
@@ -44,12 +42,12 @@ class ClickstreamEvents(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, workflow, dag, upstream_task):
-        """Initialize the clickstream config params and default event types."""
+        """Initialize the clickstream config params and built-in event types."""
         self.workflow = workflow
         self.config = workflow['config']
         self.dag = dag
         self.upstream_task = upstream_task
-        self._default_events = ['page', 'track', 'identify', 'group', 'screen', 'alias']
+        self._standard_events = ['page', 'track', 'identify', 'group', 'screen', 'alias']
 
     @property
     def workflow_id(self):
@@ -57,9 +55,9 @@ class ClickstreamEvents(object):
         return self.workflow['_id']
 
     @property
-    def default_events(self):
-        """Get the clickstream default event types."""
-        return self._default_events
+    def standard_events(self):
+        """Get the clickstream built-in event types."""
+        return self._standard_events
 
     @abc.abstractmethod
     def get_events(self):
@@ -121,15 +119,15 @@ class ClickstreamEvents(object):
         self.create_branch()
 
 
-class DefaultClickstreamEvents(ClickstreamEvents):
-    """Concrete class for sensing and processing default clickstream events."""
+class StandardClickstreamEvents(ClickstreamEvents):
+    """Concrete class for sensing and processing built-in clickstream events."""
 
     def get_events(self):
-        """Return the set of default event names."""
-        return self.default_events
+        """Return the set of built-in event names."""
+        return self.standard_events
 
     def create_branch(self):
-        """Create the branch for built-in events types."""
+        """Create the branch for built-in event types."""
         self._create_events_branch(task_id='default_tables')
 
 
@@ -149,8 +147,8 @@ class CustomClickstreamEvents(ClickstreamEvents):
     def get_events(self):
         """Return the set of custom event names."""
         all_events = set(self.all_events)
-        default_events = set(self.default_events)
-        custom_events = list(all_events - default_events)
+        standard_events = set(self.standard_events)
+        custom_events = list(all_events - standard_events)
         return custom_events
 
     def create_branch(self):
@@ -173,8 +171,8 @@ def main():
 
         start = DummyOperator(task_id='start', dag=dag)
 
-        default_events = DefaultClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start)
-        default_events.run()
+        standard_events = StandardClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start)
+        standard_events.run()
 
         custom_events = CustomClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start)
         custom_events.run()

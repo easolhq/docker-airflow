@@ -2,8 +2,8 @@
 TODO
 """
 
-from urllib import quote_plus
 import os
+from urllib.parse import quote_plus
 
 from airflow.hooks.base_hook import CONN_ENV_PREFIX
 

@@ -1,5 +1,6 @@
 import datetime
-import stringcase
+
+import boa
 
 from utils.docker import create_linked_docker_operator
 
@@ -59,7 +60,7 @@ def create_dag(workflow, schedule_interval=None, dag_cls=None, dag_type=None, da
     else:
         args = default_args
     id_ = workflow.get('_id')
-    workflow_name = stringcase.snakecase(workflow.get('name', '').lower())
+    workflow_name = boa.constrict(workflow.get('name', '').lower())
     schedule = workflow.get('schedule', schedule_interval)
 
     if dag_type is not None:

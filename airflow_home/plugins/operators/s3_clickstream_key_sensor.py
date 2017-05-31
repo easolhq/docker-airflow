@@ -1,3 +1,7 @@
+"""
+Clickstream events file detector.
+"""
+
 import logging
 from datetime import timedelta
 
@@ -11,41 +15,50 @@ config_s3()
 
 
 class S3ClickstreamKeySensor(BaseSensorOperator):
-    """
-    Detect a execution-date bound file path in S3.
-    """
+    """Detect an execution-date bound file path in S3."""
 
     template_fields = ('bucket_key', 'bucket_name')
 
     @apply_defaults
-    def __init__(self, bucket_key, bucket_name, timedelta=0, *args, **kwargs):
+    def __init__(self, bucket_name, workflow_id, table, timedelta=0, *args, **kwargs):
+        """Initialize sensor."""
         super(S3ClickstreamKeySensor, self).__init__(*args, **kwargs)
         self.bucket_name = bucket_name
-        self.bucket_key = bucket_key
+        self.workflow_id = workflow_id
+        self.table = table
         self.timedelta = timedelta
 
+    def _build_s3_key(self, execution_date):
+        """Generate the S3 key for this event table's current batch."""
+        # TODO: does the datetime part here need to change since we're shifting the whole DAG back on delay?
+        batch_datetime = execution_date - timedelta(minutes=15)
+        batch_datetime_str = batch_datetime.strftime('%Y-%m-%dT%H_%M_%S')
+        key = 'clickstream-data/{workflow_id}/{date}/{table}'.format(
+            workflow_id=self.workflow_id,
+            date=batch_datetime_str,
+            table=self.table
+        )
+        return key
+
+    def _build_s3_wildcard_url(self, key):
+        """Create S3 URL for wildcard path."""
+        url = 's3://{bucket}/{key}*'.format(bucket=self.bucket_name, key=key)
+        return url
+
+    def _build_url(self, context):
+        """Build the full S3 URL."""
+        task_instance = context['ti']
+        s3_key = self._build_s3_key(execution_date=task_instance.execution_date)
+        url = self._build_s3_wildcard_url(key=s3_key)
+        logging.info('Poking for key "{}"'.format(url))
+        return url
+
     def poke(self, context):
-        """
-        TODO
-        """
+        """Poke for clickstream event files."""
         logging.info('Starting poke')
         hook = S3FileHook(s3_conn_id='S3_CONNECTION')
-        # TODO: where does this context['ti'] get populated from?  is this task ID?
-        execution_date = context['ti'].execution_date
-        # TODO: does the datetime part here need to change since we're shifting the whole DAG back on delay?
-        batch_datetime = execution_date - timedelta(
-            minutes=15
-        )
-        bucket_key = self.bucket_key.format(
-            date=batch_datetime.strftime("%Y-%m-%dT%H_%M_%S")
-        )
-        full_url = 's3://' + self.bucket_name + '/' + bucket_key + '*'
-        logging.info('Poking for key "{}"'.format(full_url))
-
-        file_found = hook.check_for_wildcard_key(
-            wildcard_key=full_url,
-            delimiter='/',
-        )
+        full_url = self._build_url(context=context)
+        file_found = hook.check_for_wildcard_key(wildcard_key=full_url, delimiter='/')
 
         if not file_found:
             logging.warning('No file found at "{}"'.format(full_url))

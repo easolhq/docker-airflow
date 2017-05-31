@@ -1,3 +1,7 @@
+"""
+TODO
+"""
+
 import ast
 from bson import json_util
 import json
@@ -45,6 +49,17 @@ def create_docker_operator(params):
 
     # Return a new DockerOperator.
     return DockerOperator(**docker_params)
+
+
+def create_linked_docker_operator_simple(dag, activity, pool=None):
+    """
+    Adapter to work around the tuple in called function signature.
+
+    It's not possible to use full kwargs with a tuple arg; also, we don't use
+    most of these args with Clickstream DAGs.
+    """
+    activity_tuple = (0, activity)
+    return create_linked_docker_operator(dag, [], '', activity_tuple, pool)
 
 
 def create_linked_docker_operator(dag, activity_list, initial_task_id, activity_tuple, pool=None, resources=None):
@@ -115,7 +130,6 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, activity_
     force_pull = ast.literal_eval(os.getenv('FORCE_PULL_TASK_IMAGES', 'True'))
 
     # Create final dictionary for the DockerOperator
-    # TODO: discuss with mike if the addition of pool: None here will affect other docker DAGs... should it be added when pool is None?
     params = {
         'task_id': task_id,
         'pool': pool,

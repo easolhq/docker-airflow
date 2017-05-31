@@ -32,8 +32,8 @@ class S3ClickstreamKeySensor(BaseSensorOperator):
         """Generate the S3 key for this event table's current batch."""
         # TODO: does the datetime part here need to change since we're shifting the whole DAG back on delay?
         batch_datetime = execution_date - timedelta(minutes=15)
-        batch_datetime_str = batch_datetime.strftime('%Y-%m-%dT%H_%M_%S')
         key = 'clickstream-data/{workflow_id}/{date}/{table}'.format(
+        batch_datetime_str = batch_datetime.strftime('%Y-%m-%dT%H')
             workflow_id=self.workflow_id,
             date=batch_datetime_str,
             table=self.table

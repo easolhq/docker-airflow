@@ -77,8 +77,10 @@ class ClickstreamEvents(object):
         for table in tables:
             sensor = self.create_key_sensor(table=table)
             sensor.set_upstream(tables_op)
-
             copy_task = self.create_copy_operator(table=table)
+            if not copy_task:
+                logger.info('Skipping table due to invalid config')
+                continue
             copy_task.set_upstream(sensor)
 
     def create_key_sensor(self, table):
@@ -103,15 +105,19 @@ class ClickstreamEvents(object):
         activity = ClickstreamActivity(
             workflow_id=self.workflow_id,
             table_name=table,
-            redshift_host=self.config['host'],
-            redshift_port=self.config['port'],
-            redshift_db=self.config['db'],
-            redshift_user=self.config['user'],
-            redshift_password=self.config['pw'],
-            redshift_encrypted=self.config['_encrypted'],
+            redshift_host=self.config.get('host'),
+            redshift_port=self.config.get('port'),
+            redshift_db=self.config.get('db'),
+            redshift_user=self.config.get('user'),
+            redshift_password=self.config.get('pw'),
+            redshift_encrypted=self.config.get('_encrypted'),
             temp_bucket=S3_BUCKET,
             name_ver=BATCH_PROCESSING_IMAGE
         )
+
+        if not activity.is_valid():
+            return None
+
         copy_task = create_linked_docker_operator_simple(
             dag=self.dag,
             activity=activity.serialize(),

@@ -20,6 +20,20 @@ class ClickstreamActivity(object):
         self.temp_bucket = temp_bucket
         self.name, self.version = name_ver.split(':', 1) if name_ver is not None else 'aries-activity-aries-base', '0.1'
 
+        self.required_params = [
+            self.workflow_id,
+            self.table_name,
+            self.redshift_host,
+            self.redshift_port,
+            self.redshift_db,
+            self.redshift_user,
+            self.redshift_password,
+            self.redshift_encrypted,
+            self.temp_bucket,
+            self.name,
+            self.version
+        ]
+
     @property
     def redshift_schema(self):
         return self.workflow_id
@@ -28,6 +42,11 @@ class ClickstreamActivity(object):
     def task_id(self):
         """Get clickstream task id."""
         return 's3_clickstream_table_copy_{}'.format(self.table_name)
+
+    def is_valid(self):
+        # TODO: handle if values are empty strings
+        missing_params = [i for i in self.required_params if i is None]
+        return len(missing_params) == 0
 
     def serialize(self):
         """Generate config as a nested dict."""

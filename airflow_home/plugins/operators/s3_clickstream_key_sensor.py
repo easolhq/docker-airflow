@@ -36,7 +36,7 @@ class S3ClickstreamKeySensor(BaseSensorOperator):
         # TODO: does the datetime part here need to change since we're shifting the whole DAG back on delay?
         batch_datetime = execution_date - timedelta(minutes=15)
         batch_datetime_str = batch_datetime.strftime('%Y-%m-%dT%H')
-        key = 'apps/{app_id}/{date}/{group}/{table}'.format(
+        key = 'apps/{app_id}/{date}/{group}/{table}/'.format(
             app_id=self.app_id,
             date=batch_datetime_str,
             group=self.event_group,

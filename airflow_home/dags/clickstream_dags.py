@@ -143,9 +143,9 @@ class StandardClickstreamEvents(ClickstreamEvents):
 class CustomClickstreamEvents(ClickstreamEvents):
     """Concrete class for sensing and processing custom clickstream events."""
 
-    def __init__(self, workflow):
+    def __init__(self, workflow, *args, **kwargs):
         """Initialize the combined event list."""
-        super(CustomClickstreamEvents, self).__init__(workflow)
+        super(CustomClickstreamEvents, self).__init__(workflow, *args, **kwargs)
         self._all_events = self.config['tables']
 
     @property

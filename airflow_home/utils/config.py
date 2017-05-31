@@ -18,11 +18,7 @@ class ClickstreamActivity(object):
         self.redshift_password = redshift_password
         self.redshift_encrypted = redshift_encrypted
         self.temp_bucket = temp_bucket
-
-        name, version = name_ver.split(':', 1)
-        name, version = 'aries-activity-aries-base', '0.1'
-        self.name = name
-        self.version = version
+        self.name, self.version = name_ver.split(':', 1) if name_ver is not None else 'aries-activity-aries-base', '0.1'
 
     @property
     def redshift_schema(self):

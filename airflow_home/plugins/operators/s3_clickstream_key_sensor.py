@@ -24,6 +24,7 @@ class S3ClickstreamKeySensor(BaseSensorOperator):
         """Initialize sensor."""
         super(S3ClickstreamKeySensor, self).__init__(*args, **kwargs)
         self.bucket_name = bucket_name
+        self.bucket_key = None
         self.workflow_id = workflow_id
         self.table = table
         self.event_group = event_group

@@ -74,7 +74,7 @@ class ClickstreamEvents(object):
             sensor = self.create_key_sensor(table=table)
             sensor.set_upstream(tables_op)
 
-            copy_task = create_copy_operator(table=table)
+            copy_task = self.create_copy_operator(table=table)
             copy_task.set_upstream(sensor)
 
     def create_key_sensor(self, table):

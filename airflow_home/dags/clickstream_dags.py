@@ -44,6 +44,7 @@ class ClickstreamEvents(object):
     def __init__(self, workflow, dag, upstream_task):
         """Initialize the clickstream config params and built-in event types."""
         self.workflow = workflow
+        self.app_id = workflow['appId']
         self.config = workflow['config']
         self.dag = dag
         self.upstream_task = upstream_task
@@ -91,6 +92,7 @@ class ClickstreamEvents(object):
             dag=self.dag,
             bucket_name=S3_BUCKET,
             workflow_id=self.workflow_id,
+            app_id=self.app_id,
             table=table,
             timedelta=0,
             soft_fail=True,

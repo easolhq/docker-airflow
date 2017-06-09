@@ -4,6 +4,7 @@ import datetime
 import boa
 
 from utils.docker import create_linked_docker_operator
+from utils.dag_linker import link_operators
 
 now = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
 start_date = datetime.datetime(now.year, now.month, now.day, now.hour)
@@ -37,9 +38,9 @@ def create_tasks(dag, workflow):
     activity_list = workflow.get('activityList', [])
     resources = resources_for_workflow(workflow)
     tasks = [create_linked_docker_operator(dag, activity_list, '', activity, resources=resources) for activity in enumerate(activity_list)]
-    for i, current in enumerate(tasks):
-        if (i > 0):
-            current.set_upstream(tasks[i - 1])
+
+    # need to check for upstream
+    link_operators(activity_list, dag, tasks)
 
 
 def create_dag(workflow, schedule_interval=None, dag_cls=None, dag_type=None, dag_args=None):

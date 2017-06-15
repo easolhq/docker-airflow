@@ -30,10 +30,12 @@ if [ -v AIRFLOW__CORE__SQL_ALCHEMY_CONN ]; then
         FORMATTED_HOST=`echo $HOST | tr ":" " "`
         CHECK_HOST="nc -z ${FORMATTED_HOST}"
 
+        CONN_ATTEMPTS=${CONN_ATTEMPTS-10}
+
         # Sleep until we can detect a connection to host:port.
         while ! $CHECK_HOST; do
             i=`expr $i + 1`
-            if [[ "$i" -ge $CONN_ATTEMPTS ]]; then
+            if [[ "$i" -ge ${CONN_ATTEMPTS} ]]; then
                 echo "$(date) - ${HOST} still not reachable, giving up"
                 exit 1
             fi

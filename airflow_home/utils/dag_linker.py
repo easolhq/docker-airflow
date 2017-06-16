@@ -2,7 +2,8 @@ from .docker import create_linked_docker_operator
 from .index_check import index_check
 
 
-def link_operators(activity_list, dag, tasks, upstream=None):
+def link_operators(activity_list, tasks, upstream=None):
+    """Connects docker operators."""
     depends_on = depends_activities(activity_list)
 
     check_upstream(upstream, tasks, depends_on)
@@ -19,6 +20,7 @@ def link_operators(activity_list, dag, tasks, upstream=None):
 
 
 def check_upstream(upstream, tasks, depends_on):
+    """Checks for pre created upstream docker operators."""
     if upstream:
         for i, current in enumerate(tasks):
             if depends_on[i] == 0:
@@ -26,6 +28,7 @@ def check_upstream(upstream, tasks, depends_on):
 
 
 def depends_activities(activity_list):
+    """Returns list of dependencies."""
     depends_on = []
     for activity in activity_list:
         if 'dependsOn' in activity:
@@ -36,6 +39,7 @@ def depends_activities(activity_list):
 
 
 def set_activities_upstream(depend_activity, activity_list, tasks, used_activities, outer_index):
+    """Links docker operators based off of dependencies."""
     for ind, id_val in enumerate(depend_activity):
         index = index_check(id_val, activity_list)
         if [outer_index, index] not in used_activities:

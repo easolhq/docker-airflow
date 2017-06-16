@@ -40,7 +40,7 @@ def create_tasks(dag, workflow):
     tasks = [create_linked_docker_operator(dag, activity_list, '', activity, resources=resources) for activity in enumerate(activity_list)]
 
     # need to check for upstream
-    link_operators(activity_list, dag, tasks)
+    link_operators(activity_list, tasks)
 
 
 def create_dag(workflow, schedule_interval=None, dag_cls=None, dag_type=None, dag_args=None):

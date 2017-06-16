@@ -52,6 +52,7 @@ class S3ClickstreamKeySensor(BaseSensorOperator):
     def _build_url(self, context):
         """Build the full S3 URL."""
         task_instance = context['ti']
+        print("task_instance=", task_instance.__dict__)
         s3_key = self._build_s3_key(execution_date=task_instance.execution_date)
         url = self._build_s3_wildcard_url(key=s3_key)
         logging.info('Poking for key "{}"'.format(url))

@@ -23,8 +23,8 @@ from utils.s3 import config_s3_new
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-S3_BUCKET = os.getenv('AWS_S3_CLICKSTREAM_BUCKET')
-BATCH_PROCESSING_IMAGE = os.getenv('CLICKSTREAM_BATCH_IMAGE')  # TODO: what is this?
+S3_BUCKET = os.getenv('AWS_S3_CLICKSTREAM_BUCKET', default='astronomer-clickstream')
+BATCH_PROCESSING_IMAGE = os.getenv('CLICKSTREAM_BATCH_IMAGE', default='astronomerio/py-aries-clickstream')
 AWS_KEY = os.getenv('AWS_ACCESS_KEY_ID', '')
 AWS_SECRET = os.getenv('AWS_SECRET_ACCESS_KEY', '')
 config_s3_new(AWS_KEY, AWS_SECRET)
@@ -53,7 +53,8 @@ class ClickstreamEvents(object):
     @property
     def workflow_id(self):
         """Get the clickstream config workflow ID."""
-        return self.workflow['_id']
+        # return self.workflow['_id']
+        return self.workflow['appId']
 
     @property
     def standard_events(self):
@@ -114,7 +115,9 @@ class ClickstreamEvents(object):
             redshift_password=self.config.get('pw'),
             redshift_encrypted=self.config.get('_encrypted'),
             temp_bucket=S3_BUCKET,
-            name_ver=BATCH_PROCESSING_IMAGE
+            name_ver=BATCH_PROCESSING_IMAGE,
+            # name=BATCH_PROCESSING_IMAGE,
+            # name_ver='DUMMY_VALUE:0.1',
         )
 
         if not activity.is_valid():
@@ -185,9 +188,12 @@ def main():
     workflows = client.clickstream_configs()
 
     for workflow in workflows:
+        # TODO: 
+        print('workflow =', workflow)
+
         default_args['app_id'] = workflow['_id']
 
-        dag = DAG(dag_id=build_dag_id(workflow), default_args=default_args, schedule_interval='15 * * * *')
+        dag = DAG(dag_id=build_dag_id(workflow), default_args=default_args, schedule_interval='@once') #15 * * * *
         globals()[workflow['_id']] = dag
 
         start = DummyOperator(task_id='start', dag=dag)

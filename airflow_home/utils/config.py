@@ -23,7 +23,12 @@ class ClickstreamActivity(object):
         self.redshift_password = redshift_password
         self.redshift_encrypted = redshift_encrypted
         self.temp_bucket = temp_bucket
-        self.name, self.version = name_ver.split(':', 1) if name_ver is not None else 'aries-activity-aries-base', '0.1'
+
+        if ':' in name_ver:
+            self.name, self.version = name_ver.split(':', 1)
+        else:
+            self.name = name_ver
+            self.version = 'latest'
 
         required_params_strs = [
             'workflow_id',
@@ -68,15 +73,17 @@ class ClickstreamActivity(object):
             'config': {
                 'appId': self.workflow_id,
                 'table': self.table_name,
-                'redshift_host': self.redshift_host,
-                'redshift_port': self.redshift_port,
-                'redshift_db': self.redshift_db,
-                'redshift_user': self.redshift_user,
-                'redshift_password': self.redshift_password,
+                'connection': {
+                    'host': self.redshift_host,
+                    'port': self.redshift_port,
+                    'db': self.redshift_db,
+                    'user': self.redshift_user,
+                    'password': self.redshift_password,
+                    '_encrypted': self.redshift_encrypted,
+                },
                 'redshift_schema': self.redshift_schema,
                 'temp_bucket': self.temp_bucket,
                 'timedelta': 0,
-                '_encrypted': self.redshift_encrypted,
             }
         }
         return activity

@@ -188,12 +188,12 @@ def main():
     workflows = client.clickstream_configs()
 
     for workflow in workflows:
-        # TODO: 
         print('workflow =', workflow)
 
         default_args['app_id'] = workflow['_id']
 
-        dag = DAG(dag_id=build_dag_id(workflow), default_args=default_args, schedule_interval='@once') #15 * * * *
+        # TODO: flip back to old schedule when done testing - 15 * * * *
+        dag = DAG(dag_id=build_dag_id(workflow), default_args=default_args, schedule_interval='@once')
         globals()[workflow['_id']] = dag
 
         start = DummyOperator(task_id='start', dag=dag)

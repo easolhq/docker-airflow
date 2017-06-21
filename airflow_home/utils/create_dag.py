@@ -38,8 +38,6 @@ def create_tasks(dag, workflow):
     activity_list = workflow.get('activityList', [])
     resources = resources_for_workflow(workflow)
     tasks = [create_linked_docker_operator(dag, activity_list, '', activity, resources=resources) for activity in enumerate(activity_list)]
-
-    # need to check for upstream
     link_operators(activity_list, tasks)
 
 

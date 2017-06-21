@@ -170,7 +170,6 @@ class MongoClient:
         # TODO: when v2 comes out will need to add a look up for the connection
 
         integration_configs = self.db.integrationConfigs.find({'integration': 'amazon-redshift', 'config.tables': {'$exists': True}})
-        print('integration_configs =', integration_configs)
         return integration_configs
 
     def close(self):

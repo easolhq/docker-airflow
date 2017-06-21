@@ -3,7 +3,7 @@ from .docker import create_linked_docker_operator
 
 # 1. optimize depends_on/legacy check
 def link_operators(activity_list, tasks):
-    """Connects docker operators."""
+    """Connects operators."""
     depends_on = depends_activities(activity_list)
 
     if all(depends == 0 for depends in depends_on):
@@ -11,7 +11,9 @@ def link_operators(activity_list, tasks):
             if i > 0:
                 current.set_upstream(tasks[i - 1])
     else:
-        activity_operators = {activity['id']: tasks[idx] for idx, activity in enumerate(activity_list)}
+        activity_operators = {
+            activity['id']: tasks[idx] for idx, activity in enumerate(activity_list)
+        }
         for activity, task in zip(activity_list, tasks):
             deps_ops = [activity_operators[x] for x in activity.get('dependsOn', [])]
             task.set_upstream(deps_ops)

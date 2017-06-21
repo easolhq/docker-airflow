@@ -5,7 +5,7 @@
 Airflow docker container
 
 ## Cloud/FTP/Webhook DAGS
-Dependencies are now handled, if no `dependsOn` field is inside of the config then a linear series of activities will be created based on order in the activity list.If there is a `dependsOn` field, then that activity will be created downstream from the associated ID's inside of `dependsOn`. There can be multiple ID's inside of `dependsOn` which means that there will be multiple inputs going into that activity. Also, activities can have depend on the same activity ID, meaning the activity will output to multiple activities.
+Dependencies are now handled, if no `dependsOn` field is inside of the config then a linear series of activities will be created based on order in the activity list.If there is a `dependsOn` field, then that activity will be created downstream from the associated ID's inside of `dependsOn`. There can be multiple ID's inside of `dependsOn` which means that there will be multiple inputs going into that activity. Also, activities can depend on the same activity ID, meaning the activity will output to multiple activities.
 
 ## Clickstream DAGs
 Clickstream DAGs are dynamically generated using information from the `clickstreamData` Mongo collection:

@@ -51,6 +51,44 @@ def create_docker_operator(params):
     return DockerOperator(**docker_params)
 
 
+def index_check(value, activity_list):
+    return next(index for (index, activity) in enumerate(activity_list) if activity['id'] == value)
+
+
+def task_id_formatter(index, activity):
+    return '{}_{}'.format(
+        index,
+        format_task_name(activity['name']))
+
+
+def find_prev_task_id(activity, activity_list, initial_task_id, index):
+    if index is 0 and 'dependsOn' not in activity:
+        return initial_task_id
+    elif index > 0 and 'dependsOn' not in activity:
+        return task_id_formatter(index - 1, activity_list[index - 1])
+    else:
+        task = [task_id_formatter(index, activity_list[index]) for index in (index_check(id_, activity_list) for id_ in activity['dependsOn'])]
+        print(task)
+        return task
+
+
+def create_command(task_ids):
+    if isinstance(task_ids, str):
+        return """
+            '{{ task_instance.xcom_pull(task_ids=params.prev_task_id) }}'
+            '{{ params.config }}'
+            '{{ ts }}'
+            '{{ next_execution_date.isoformat() if next_execution_date != None else '' }}'
+        """
+    else:
+        return """
+            '{{ task_instance.xcom_pull(task_ids=params.prev_task_id)|list }}'
+            '{{ params.config }}'
+            '{{ ts }}'
+            '{{ next_execution_date.isoformat() if next_execution_date != None else '' }}'
+        """
+
+
 def create_linked_docker_operator_simple(
         dag, activity,
         retries=None,
@@ -72,27 +110,6 @@ def create_linked_docker_operator_simple(
         force_pull=force_pull,
         pool=pool,
         resources=resources)
-
-
-def index_check(value, activity_list):
-    return next(index for (index, activity) in enumerate(activity_list) if activity['id'] == value)
-
-
-def task_id_formatter(index, activity):
-    return '{}_{}'.format(
-        index,
-        format_task_name(activity['name']))
-
-
-def find_prev_task_id(activity, activity_list, initial_task_id, index):
-    if index is 0 and 'dependsOn' not in activity:
-        return initial_task_id
-    elif index > 0 and 'dependsOn' not in activity:
-        return task_id_formatter(index - 1, activity_list[index - 1])
-    else:
-        task = [task_id_formatter(index, activity_list[index]) for index in (index_check(id_, activity_list) for id_ in activity['dependsOn'])]
-        print(task)
-        return task
 
 
 def create_linked_docker_operator(
@@ -121,12 +138,7 @@ def create_linked_docker_operator(
     prev_task_id = find_prev_task_id(activity, activity_list, initial_task_id, index)
 
     # Template out a command.
-    command = """
-        '{{ task_instance.xcom_pull(task_ids=params.prev_task_id) }}'
-        '{{ params.config }}'
-        '{{ ts }}'
-        '{{ next_execution_date.isoformat() if next_execution_date != None else '' }}'
-    """
+    command = create_command(prev_task_id)
 
     # Get config.
     config = activity['config'] if 'config' in activity else {}

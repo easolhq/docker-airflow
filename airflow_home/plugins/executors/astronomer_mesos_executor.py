@@ -43,8 +43,10 @@ def offer_suitable(mesos_offer, airflow_task):
     if len(mesos_cpu) > 0:
         totalOffer = sum(x.scalar.value for x in mesos_cpu)
         if totalOffer < airflow_cpu.value:
+            print("not enough cpu in offer")
             return False
     else:
+        print("no enough cpu in offer")
         return False  # not enough cpu
 
     airflow_ram = airflow_task.resources.ram
@@ -52,13 +54,25 @@ def offer_suitable(mesos_offer, airflow_task):
     if len(mesos_mem) > 0:
         totalOffer = sum(x.scalar.value for x in mesos_mem)
         if totalOffer < airflow_ram.value:
+            print("not enough mem in offer")
             return False
+    else:
+        print("no mem in offer")
+        return False
 
+    #TODO: check for disk
     mesos_org = next((x for x in mesos_offer.attributes if x.name == 'organizationId'), Dict())
     if airflow_task.resources.organizationId is not None:
-        return airflow_task.resources.organizationId.value == mesos_org.text.value
+        offer_organization_matches = airflow_task.resources.organizationId.value == mesos_org.text.value
+        if offer_organization_matches:
+            print("offer_organization_matches true")
+        else:
+            print("offer_organization_matches false")
+        return offer_organization_matches
     elif len(mesos_org.text.value) > 0:
+        print("no org attribute in offer")
         return False
+    print("offer fits task")
     return True
 
 
@@ -133,6 +147,9 @@ class AirflowMesosScheduler(Scheduler):
                 # validate resource offers
                 if not offer_suitable(offer, task_instance):
                     # if not suitable, put task back on the queue
+                    print("offer not suitable for {}".format(key))
+                    print("offer={}".format(offer))
+                    print("task_instance.resources={}".format(task_instance.resources))
                     self.task_queue.put((key, cmd, task_instance))
                     break
                 tid = self.task_counter

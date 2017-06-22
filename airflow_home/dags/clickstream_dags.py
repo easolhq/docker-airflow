@@ -73,7 +73,7 @@ class ClickstreamEvents(object):
     def _create_events_branch(self, task_id):
         """Create the DAG branch with sensor and operator (to be called by each subclass)."""
         tables = self.get_events()
-        tables_op = DummyOperator(task_id=task_id, dag=self.dag)
+        tables_op = DummyOperator(task_id=task_id, dag=self.dag, resources=dict(organizationId='astronomer'))
         tables_op.set_upstream(self.upstream_task)
 
         for table in tables:
@@ -99,7 +99,8 @@ class ClickstreamEvents(object):
             soft_fail=True,
             poke_interval=5,
             timeout=10,
-            event_group=self.event_group_name
+            event_group=self.event_group_name,
+            resources=dict(organizationId='astronomer')
         )
         return sensor
 
@@ -123,10 +124,12 @@ class ClickstreamEvents(object):
         if not activity.is_valid():
             return None
 
+
         copy_task = create_linked_docker_operator_simple(
             dag=self.dag,
             activity=activity.serialize(),
-            pool=AIRFLOW_CLICKSTREAM_BATCH_POOL
+            pool=AIRFLOW_CLICKSTREAM_BATCH_POOL,
+            resources=dict(organizationId='astronomer')
         )
         return copy_task
 
@@ -191,10 +194,10 @@ def main():
         default_args['app_id'] = workflow['_id']
 
         # TODO: flip back to old schedule when done testing - 15 * * * *
-        dag = DAG(dag_id=build_dag_id(workflow), default_args=default_args, schedule_interval='@once')
+        dag = DAG(dag_id=build_dag_id(workflow), default_args=default_args, schedule_interval='15 * * * *')
         globals()[workflow['_id']] = dag
 
-        start = DummyOperator(task_id='start', dag=dag)
+        start = DummyOperator(task_id='start', dag=dag, resources=dict(organizationId='astronomer'))
 
         standard_events = StandardClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start)
         standard_events.run()

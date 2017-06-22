@@ -51,7 +51,7 @@ def create_docker_operator(params):
     return DockerOperator(**docker_params)
 
 
-def create_linked_docker_operator_simple(dag, activity, pool=None):
+def create_linked_docker_operator_simple(dag, activity, pool=None, resources=None):
     """
     Adapter to work around the tuple in called function signature.
 
@@ -59,7 +59,7 @@ def create_linked_docker_operator_simple(dag, activity, pool=None):
     most of these args with Clickstream DAGs.
     """
     activity_tuple = (0, activity)
-    return create_linked_docker_operator(dag, [], '', activity_tuple, pool)
+    return create_linked_docker_operator(dag, [], '', activity_tuple, pool, resources)
 
 
 def create_linked_docker_operator(dag, activity_list, initial_task_id, activity_tuple, pool=None, resources=None):

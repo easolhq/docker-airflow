@@ -74,6 +74,27 @@ def create_linked_docker_operator_simple(
         resources=resources)
 
 
+def index_check(value, activity_list):
+    return next(index for (index, activity) in enumerate(activity_list) if activity['id'] == value)
+
+
+def task_id_formatter(index, activity):
+    return '{}_{}'.format(
+        index,
+        format_task_name(activity['name']))
+
+
+def find_prev_task_id(activity, activity_list, initial_task_id, index):
+    if index is 0 and 'dependsOn' not in activity:
+        return initial_task_id
+    elif index > 0 and 'dependsOn' not in activity:
+        return task_id_formatter(index - 1, activity_list[index - 1])
+    else:
+        task = [task_id_formatter(index, activity_list[index]) for index in (index_check(id_, activity_list) for id_ in activity['dependsOn'])]
+        print(task)
+        return task
+
+
 def create_linked_docker_operator(
         dag, activity_list, initial_task_id, activity_tuple,
         retries=None,
@@ -95,12 +116,9 @@ def create_linked_docker_operator(
     :return DockerOperator
     """
     index, activity = activity_tuple
+
     # Get the previous tasks id for xcom.
-    prev_task_id = (
-        initial_task_id if index is 0
-        else '{index}_{name}'.format(
-            index=index - 1,
-            name=format_task_name(activity_list[index - 1]['name'])))
+    prev_task_id = find_prev_task_id(activity, activity_list, initial_task_id, index)
 
     # Template out a command.
     command = """
@@ -124,10 +142,7 @@ def create_linked_docker_operator(
 
     # Create task id.
     # TODO: use activity.get('task_id', '...') instead
-    task_id = activity['task_id'] if 'task_id' in activity else '{index}_{name}'.format(
-        index=index,
-        name=format_task_name(activity['name']))
-
+    task_id = activity['task_id'] if 'task_id' in activity else task_id_formatter(index, activity)
     # Check for vpnConnection. Must run privileged if a tunnel is needed.
     privileged = 'vpnConnection' in config.get('connection', {})
 

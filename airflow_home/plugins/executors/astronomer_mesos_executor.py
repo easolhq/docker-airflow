@@ -37,44 +37,18 @@ def copy_env_var(command, env_var_name):
     )
 
 
-def offer_suitable(mesos_offer, airflow_task):
-    airflow_cpu = airflow_task.resources.cpu
-    mesos_cpu = [x for x in mesos_offer.resources if x.name == 'cpus']
-    if len(mesos_cpu) > 0:
-        totalOffer = sum(x.scalar.value for x in mesos_cpu)
-        if totalOffer < airflow_cpu.value:
-            print("not enough cpu in offer")
-            return False
-    else:
-        print("no enough cpu in offer")
-        return False  # not enough cpu
-
-    airflow_ram = airflow_task.resources.ram
-    mesos_mem = [x for x in mesos_offer.resources if x.name == 'mem']
-    if len(mesos_mem) > 0:
-        totalOffer = sum(x.scalar.value for x in mesos_mem)
-        if totalOffer < airflow_ram.value:
-            print("not enough mem in offer")
-            return False
-    else:
-        print("no mem in offer")
-        return False
-
-    #TODO: check for disk
-    mesos_org = next((x for x in mesos_offer.attributes if x.name == 'organizationId'), Dict())
-    if airflow_task.resources.organizationId is not None:
-        offer_organization_matches = airflow_task.resources.organizationId.value == mesos_org.text.value
-        if offer_organization_matches:
-            print("offer_organization_matches true")
-        else:
-            print("offer_organization_matches false")
-        return offer_organization_matches
-    elif len(mesos_org.text.value) > 0:
-        print("no org attribute in offer")
-        return False
-    print("offer fits task")
-    return True
-
+def offer_suitable(offer, task_instance):
+    isSuitable = True
+    if task_instance.resources.cpu.value >= offer['cpus']:
+        logging.info("offer doesn't have enough cpu")
+        isSuitable = False
+    if task_instance.resources.ram.value >= offer['mem']:
+        logging.info("offer doesn't have enough ram")
+        isSuitable = False
+    if task_instance.resources.organizationId.value not in offer['offerOrgIds']:
+        logging.info("offer doesn't have organizationId")
+        isSuitable = False
+    return isSuitable
 
 # AirflowMesosScheduler, implements Mesos Scheduler interface
 # To schedule airflow jobs on mesos
@@ -139,22 +113,50 @@ class AirflowMesosScheduler(Scheduler):
         raise AirflowException("AirflowScheduler driver aborted %s" % message)
 
     def resourceOffers(self, driver, offers):
+        logging.info("got offers: {}".format(offers))
+        logging.info("task_counter: {}".format(self.task_counter))
+        logging.info("task_key_map: {}".format(self.task_key_map))
+        logging.info("task_queue.qsize: {}".format(self.task_queue.qsize()))
+
         for offer in offers:
             tasks = []
+            offerCpus = 0
+            offerMem = 0
+            offerOrgIds = []
+            # TODO: check disk
+            for resource in offer.resources:
+                if resource.name == "cpus":
+                    offerCpus += resource.scalar.value
+                elif resource.name == "mem":
+                    offerMem += resource.scalar.value
+            offerOrgIds = [attr.text.value for attr in offer.attributes if attr.name == 'organizationId']
+
+            logging.info("Received offer {} with cpus: {} and mem: {} and organizationIds: {}".format(offer.id.value, offerCpus, offerMem, offerOrgIds))
+
+            remainingCpus = offerCpus
+            remainingMem = offerMem
+
+            if self.task_queue.empty():
+                logging.info("task_queue is empty")
 
             while (not self.task_queue.empty()):
                 key, cmd, task_instance = self.task_queue.get()
+                o = dict(
+                    cpus=remainingCpus,
+                    mem=remainingMem,
+                    offerOrgIds=offerOrgIds
+                )
                 # validate resource offers
-                if not offer_suitable(offer, task_instance):
+                if not offer_suitable(o, task_instance):
                     # if not suitable, put task back on the queue
-                    print("offer not suitable for {}".format(key))
-                    print("offer={}".format(offer))
-                    print("task_instance.resources={}".format(task_instance.resources))
+                    logging.info("offer not suitable for {}".format(key))
+                    logging.info("task_instance.resources={}".format(task_instance.resources))
+                    logging.info("putting {} back into task_queue".format(key))
                     self.task_queue.put((key, cmd, task_instance))
                     break
                 tid = self.task_counter
                 self.task_counter += 1
-                self.task_key_map[str(tid)] = key
+                self.task_key_map[str(tid)] = (key, cmd, task_instance)
 
                 logging.info("Launching task %d using offer %s", tid, offer.id.value)
 
@@ -190,9 +192,11 @@ class AirflowMesosScheduler(Scheduler):
                 copy_env_var(command, "AWS_SECRET_ACCESS_KEY")
 
                 task.command = command
-                logging.info("Launching task: %s", task)
                 tasks.append(task)
+                remainingCpus -= task_instance.resources.cpu.value
+                remainingMem -= task_instance.resources.ram.value
 
+            logging.info("Offer {} is launching tasks: {}".format(offer.id, tasks))
             driver.launchTasks(offer.id, tasks)
 
     def statusUpdate(self, driver, update):
@@ -200,7 +204,7 @@ class AirflowMesosScheduler(Scheduler):
                      update.task_id.value, update.state, update)
 
         try:
-            key = self.task_key_map[update.task_id.value]
+            key, cmd, task_instance = self.task_key_map[update.task_id.value]
         except KeyError:
             # The map may not contain an item if the framework re-registered after a failover.
             # Discard these tasks.
@@ -215,12 +219,29 @@ class AirflowMesosScheduler(Scheduler):
             if update.state == "TASK_FINISHED":
                 self.result_queue.put((key, State.SUCCESS))
                 self.task_queue.task_done()
+                del self.task_key_map[update.task_id.value]
+                return
 
             if update.state == "TASK_LOST" or \
                update.state == "TASK_KILLED" or \
                update.state == "TASK_FAILED":
                 self.result_queue.put((key, State.FAILED))
                 self.task_queue.task_done()
+                return
+            if update.state == "TASK_ERROR":
+                # catch potential race condition between airflow and the rest of the
+                # frameworks in mesos
+                # potentially not needed depending on how the offers actually work
+                # i.e. if offers are sent out to all frameworks at once or one by one
+                if 'more than available' in update.message:
+                    self.task_queue.task_done()
+                    del self.task_key_map[update.task_id.value]
+                    self.task_queue.put((key, cmd, task_instance))
+                else:
+                    logging.info('unhandled TASK_ERROR state: {}'.format(update.message))
+                    self.result_queue.put((key, State.FAILED))
+                    self.task_queue.task_done()
+                    del self.task_key_map[update.task_id.value]
         except ValueError:
             logging.warn("Error marking task_done")
 

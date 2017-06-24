@@ -39,6 +39,12 @@ def copy_env_var(command, env_var_name):
 
 def offer_suitable(offer, task_instance):
     isSuitable = True
+    if not 'cpus' in offer:
+        logging.info("offer doesn't have cpus")
+        return False
+    if not 'mem' in offer:
+        logging.info("offer doesn't have mem")
+        return False
     if task_instance.resources.cpu.value >= offer['cpus']:
         logging.info("offer doesn't have enough cpu")
         isSuitable = False

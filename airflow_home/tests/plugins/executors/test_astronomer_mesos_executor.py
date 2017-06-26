@@ -41,51 +41,23 @@ def test_copy_env_var_merges():
 
 
 def test_empty_offer_not_suitable():
-    mesos_offer = Dict()
-    mesos_offer.attributes = []
-    mesos_offer.resources = []
-    operator = BaseOperator(task_id='123')
-    suitable = offer_suitable(mesos_offer, operator)
+    operator = BaseOperator(task_id='123', resources=dict(organizationId='astronomer'))
+    suitable = offer_suitable(operator)
     assert suitable is False
 
 
 def test_full_offer_suitable():
-    mesos_offer = Dict()
-    mesos_offer.resources = [
-        Dict(name='cpus', type='SCALAR', scalar=Dict(value=1)),
-        Dict(name='mem', type='SCALAR', scalar=Dict(value=512)),
-        Dict(name='disk', type='SCALAR', scalar=Dict(value=512))
-    ]
-    mesos_offer.attributes = []
-    operator = BaseOperator(task_id='123')
-    suitable = offer_suitable(mesos_offer, operator)
-    assert suitable is True
-
-
-def test_offer_with_multiple_matches_against_resources():
-    mesos_offer = Dict()
-    mesos_offer.resources = [
-        Dict(name='cpus', type='SCALAR', scalar=Dict(value=0.5)),
-        Dict(name='cpus', type='SCALAR', scalar=Dict(value=0.5)),
-        Dict(name='mem', type='SCALAR', scalar=Dict(value=512)),
-        Dict(name='disk', type='SCALAR', scalar=Dict(value=512))
-    ]
-    mesos_offer.attributes = []
-    operator = BaseOperator(task_id='123')
-    suitable = offer_suitable(mesos_offer, operator)
+    cpus=1
+    mem=512
+    offerOrgIds=['astronomer']
+    operator = BaseOperator(task_id='123', resources=dict(organizationId='astronomer'))
+    suitable = offer_suitable(operator, cpus, mem, offerOrgIds)
     assert suitable is True
 
 
 def test_offer_against_missing_organizationId_fails():
-    mesos_offer = Dict()
-    mesos_offer.resources = [
-        Dict(name='cpus', type='SCALAR', scalar=Dict(value=1)),
-        Dict(name='disk', type='SCALAR', scalar=Dict(value=512)),
-        Dict(name='mem', type='SCALAR', scalar=Dict(value=512)),
-    ]
-    mesos_offer.attributes = [
-        Dict(name='organizationId', type='TEXT', text=Dict(value='12345'))
-    ]
-    operator = BaseOperator(task_id='123')
-    suitable = offer_suitable(mesos_offer, operator)
+    cpus=1
+    mem=512
+    operator = BaseOperator(task_id='123', resources=dict(organizationId='astronomer'))
+    suitable = offer_suitable(operator, cpus, mem)
     assert suitable is False

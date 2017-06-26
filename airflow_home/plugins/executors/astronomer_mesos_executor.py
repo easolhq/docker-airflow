@@ -198,8 +198,8 @@ class AirflowMesosScheduler(Scheduler):
                 remainingCpus -= task_instance.resources.cpu.value
                 remainingMem -= task_instance.resources.ram.value
 
-            logging.info("Offer {} is launching tasks: {}".format(offer.id, tasks))
-            driver.launchTasks(offer.id.value, tasks)
+            logging.info("Offer {} is launching tasks: {}".format(offer.id.value, tasks))
+            driver.launchTasks(offer.id, tasks)
 
     def statusUpdate(self, driver, update):
         logging.info("Task %s is in state %s, data %s",

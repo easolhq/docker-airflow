@@ -99,6 +99,9 @@ class AirflowMesosScheduler(Scheduler):
         logging.info("AirflowScheduler re-registered to mesos")
 
     def disconnected(self, driver):
+        # TODO: exponential back off(?)
+        # TODO: use many scheduler connections as a connection pool
+        self.start()
         logging.info("AirflowScheduler disconnected from mesos")
 
     def offerRescinded(self, driver, offerId):

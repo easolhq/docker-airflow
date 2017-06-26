@@ -124,7 +124,6 @@ class ClickstreamEvents(object):
         if not activity.is_valid():
             return None
 
-
         copy_task = create_linked_docker_operator_simple(
             dag=self.dag,
             activity=activity.serialize(),

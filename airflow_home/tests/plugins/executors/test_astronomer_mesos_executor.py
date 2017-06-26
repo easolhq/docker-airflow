@@ -47,17 +47,17 @@ def test_empty_offer_not_suitable():
 
 
 def test_full_offer_suitable():
-    cpus=1
-    mem=512
-    offerOrgIds=['astronomer']
+    cpus = 1
+    mem = 512
+    offerOrgIds = ['astronomer']
     operator = BaseOperator(task_id='123', resources=dict(organizationId='astronomer'))
     suitable = offer_suitable(operator, cpus, mem, offerOrgIds)
     assert suitable is True
 
 
 def test_offer_against_missing_organizationId_fails():
-    cpus=1
-    mem=512
+    cpus = 1
+    mem = 512
     operator = BaseOperator(task_id='123', resources=dict(organizationId='astronomer'))
     suitable = offer_suitable(operator, cpus, mem)
     assert suitable is False

@@ -55,6 +55,8 @@ def offer_suitable(task_instance, cpus=0, mem=0, offerOrgIds=[]):
 
 # AirflowMesosScheduler, implements Mesos Scheduler interface
 # To schedule airflow jobs on mesos
+
+
 class AirflowMesosScheduler(Scheduler):
     """
     Airflow Mesos scheduler implements mesos scheduler interface
@@ -134,7 +136,9 @@ class AirflowMesosScheduler(Scheduler):
                     offerMem += resource.scalar.value
             offerOrgIds = [attr.text.value for attr in offer.attributes if attr.name == 'organizationId']
 
-            logging.info("Received offer {} with cpus: {} and mem: {} and organizationIds: {}".format(offer.id.value, offerCpus, offerMem, offerOrgIds))
+            logging.info(
+                "Received offer {} with cpus: {} and mem: {} and organizationIds: {}".format(
+                    offer.id.value, offerCpus, offerMem, offerOrgIds))
 
             remainingCpus = offerCpus
             remainingMem = offerMem
@@ -195,7 +199,7 @@ class AirflowMesosScheduler(Scheduler):
                 remainingMem -= task_instance.resources.ram.value
 
             logging.info("Offer {} is launching tasks: {}".format(offer.id, tasks))
-            driver.launchTasks(offer.id, tasks)
+            driver.launchTasks(offer.id.value, tasks)
 
     def statusUpdate(self, driver, update):
         logging.info("Task %s is in state %s, data %s",

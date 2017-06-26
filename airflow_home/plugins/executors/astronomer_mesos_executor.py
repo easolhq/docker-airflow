@@ -37,24 +37,21 @@ def copy_env_var(command, env_var_name):
     )
 
 
-def offer_suitable(offer, task_instance):
-    isSuitable = True
-    if not 'cpus' in offer:
-        logging.info("offer doesn't have cpus")
-        return False
-    if not 'mem' in offer:
-        logging.info("offer doesn't have mem")
-        return False
-    if task_instance.resources.cpu.value >= offer['cpus']:
+def offer_suitable(task_instance, cpus=0, mem=0, offerOrgIds=[]):
+    is_suitable = True
+    if task_instance.resources.cpu.value > cpus:
         logging.info("offer doesn't have enough cpu")
-        isSuitable = False
-    if task_instance.resources.ram.value >= offer['mem']:
-        logging.info("offer doesn't have enough ram")
-        isSuitable = False
-    if task_instance.resources.organizationId.value not in offer['offerOrgIds']:
+        is_suitable = False
+    if task_instance.resources.ram.value > mem:
+        logging.info("offer doesn't have enough mem")
+        is_suitable = False
+    if not hasattr(task_instance.resources, 'organizationId'):
+        logging.info("task_instance doesn't have organizationId")
+        return False
+    if task_instance.resources.organizationId.value not in offerOrgIds:
         logging.info("offer doesn't have organizationId")
-        isSuitable = False
-    return isSuitable
+        is_suitable = False
+    return is_suitable
 
 # AirflowMesosScheduler, implements Mesos Scheduler interface
 # To schedule airflow jobs on mesos
@@ -147,13 +144,8 @@ class AirflowMesosScheduler(Scheduler):
 
             while (not self.task_queue.empty()):
                 key, cmd, task_instance = self.task_queue.get()
-                o = dict(
-                    cpus=remainingCpus,
-                    mem=remainingMem,
-                    offerOrgIds=offerOrgIds
-                )
                 # validate resource offers
-                if not offer_suitable(o, task_instance):
+                if not offer_suitable(task_instance, remainingCpus, remainingMem, offerOrgIds):
                     # if not suitable, put task back on the queue
                     logging.info("offer not suitable for {}".format(key))
                     logging.info("task_instance.resources={}".format(task_instance.resources))

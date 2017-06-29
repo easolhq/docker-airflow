@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+set -e
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if [[ $@ != *"airflow"* ]] && [[ $@ != "" ]]; then
     exec $@
@@ -27,21 +30,8 @@ if [ -v AIRFLOW__CORE__SQL_ALCHEMY_CONN ]; then
     # Wait for postgres then init the db.
     if [[ $AIRFLOW_ROLE == "webserver" ]] || [[ $AIRFLOW_ROLE == "scheduler" ]]; then
         HOST=`echo $AIRFLOW__CORE__SQL_ALCHEMY_CONN | awk -F@ '{print $2}'`
-        FORMATTED_HOST=`echo $HOST | tr ":" " "`
-        CHECK_HOST="nc -z ${FORMATTED_HOST}"
-
-        CONN_ATTEMPTS=${CONN_ATTEMPTS-10}
-
-        # Sleep until we can detect a connection to host:port.
-        while ! $CHECK_HOST; do
-            i=`expr $i + 1`
-            if [[ "$i" -ge ${CONN_ATTEMPTS} ]]; then
-                echo "$(date) - ${HOST} still not reachable, giving up"
-                exit 1
-            fi
-            echo "$(date) - waiting for ${HOST}... $i/$CONN_ATTEMPTS"
-            sleep 10
-        done
+        echo "Waiting for host: ${HOST}"
+        ${DIR}/wait-for-it.sh ${HOST}
 
         # Ensure db initialized.
         if [[ $AIRFLOW_ROLE == "webserver" ]] || [[ $AIRFLOW_ROLE == "scheduler" ]]; then

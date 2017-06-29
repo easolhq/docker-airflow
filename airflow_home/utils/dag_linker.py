@@ -4,6 +4,7 @@ from .docker import create_linked_docker_operator, task_id_formatter
 
 S3_BUCKET = os.getenv('AWS_S3_TEMP_BUCKET')
 
+
 # 1. optimize depends_on/legacy check
 def link_operators(activity_list, tasks):
     """Connects operators."""
@@ -53,7 +54,7 @@ def s3_key_retrieval(activity_list, tasks):
     script = """
         '{{ task_instance.xcom_pull(task_ids=params.bucket_keys) }}'
     """
-    params = { 'bucket_keys': bucket_keys }
+    params = {'bucket_keys': bucket_keys}
     return S3RemoveKeyOperator(
         dag=tasks[0].dag,
         bucket_name=S3_BUCKET,

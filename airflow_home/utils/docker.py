@@ -67,7 +67,9 @@ def find_prev_task_id(activity, activity_list, initial_task_id, index):
     elif index > 0 and 'dependsOn' not in activity:
         return task_id_formatter(index - 1, activity_list[index - 1])
     else:
-        task = [task_id_formatter(index, activity_list[index]) for index in (index_check(id_, activity_list) for id_ in activity['dependsOn'])]
+        task = [
+            task_id_formatter(index, activity_list[index]) for index in (index_check(id_, activity_list) for id_ in activity['dependsOn'])
+        ]
         return task
 
 

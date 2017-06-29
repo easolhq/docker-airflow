@@ -68,7 +68,6 @@ def find_prev_task_id(activity, activity_list, initial_task_id, index):
         return task_id_formatter(index - 1, activity_list[index - 1])
     else:
         task = [task_id_formatter(index, activity_list[index]) for index in (index_check(id_, activity_list) for id_ in activity['dependsOn'])]
-        print(task)
         return task
 
 

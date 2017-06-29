@@ -2,7 +2,6 @@ import os
 import datetime
 
 import boa
-
 from utils.docker import create_linked_docker_operator
 from utils.dag_linker import link_operators
 

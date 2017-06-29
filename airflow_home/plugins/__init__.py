@@ -9,9 +9,10 @@ class AstronomerPlugin(AirflowPlugin):
     ]
     operators = [
         operators.S3GetKeyOperator,
+        operators.S3RemoveKeyOperator,
         operators.S3FileKeySensor,
         operators.S3WildcardKeySensor,
-        operators.S3ClickstreamKeySensor,
+        operators.S3ClickstreamKeySensor
     ]
     hooks = [
         hooks.S3FileHook,

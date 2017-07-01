@@ -29,7 +29,7 @@ fi
 if [ -v AIRFLOW__CORE__SQL_ALCHEMY_CONN ]; then
     # Wait for postgres then init the db.
     if [[ $AIRFLOW_ROLE == "webserver" ]] || [[ $AIRFLOW_ROLE == "scheduler" ]]; then
-        HOST=`echo $AIRFLOW__CORE__SQL_ALCHEMY_CONN | awk -F@ '{print $2}'`
+        HOST=`echo $AIRFLOW__CORE__SQL_ALCHEMY_CONN | awk -F@ '{print $2}' | awk -F/ '{print $1}'`
         echo "Waiting for host: ${HOST}"
         ${DIR}/wait-for-it.sh ${HOST}
 

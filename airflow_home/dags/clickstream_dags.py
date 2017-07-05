@@ -183,6 +183,7 @@ class CustomClickstreamEvents(ClickstreamEvents):
         """Create the branch for custom event types."""
         self._create_events_branch(task_id='event_tables')
 
+
 @provide_session
 def main(session=None):
     """Create clickstream DAG with branches for clickstream events grouped by type."""

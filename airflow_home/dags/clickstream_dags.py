@@ -7,7 +7,10 @@ import abc
 import logging
 import os
 
+
 from airflow import DAG
+from airflow.models import Pool
+from airflow.settings import Session
 from airflow.operators import S3ClickstreamKeySensor
 from airflow.operators.dummy_operator import DummyOperator
 
@@ -206,8 +209,8 @@ def main():
         custom_events = CustomClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start)
         custom_events.run()
 
-        session = airflow.settings.Session()
-        pool = airflow.models.Pool(pool=pool_name, slots=5)
+        session = Session()
+        pool = Pool(pool=pool_name, slots=5)
         session.add(pool)
         session.commit()
 

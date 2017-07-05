@@ -127,7 +127,7 @@ class ClickstreamEvents(object):
         copy_task = create_linked_docker_operator_simple(
             dag=self.dag,
             activity=activity.serialize(),
-            pool=AIRFLOW_CLICKSTREAM_BATCH_POOL,
+            pool=self.workflow['pool'],
             resources=dict(organizationId='astronomer')
         )
         return copy_task
@@ -191,6 +191,8 @@ def main():
 
     for workflow in workflows:
         default_args['app_id'] = workflow['_id']
+        pool_name = "redshift_loader_".format(workflow['_id'])
+        workflow['pool'] = pool_name
 
         # TODO: flip back to old schedule when done testing - 15 * * * *
         dag = DAG(dag_id=build_dag_id(workflow), default_args=default_args, schedule_interval='15 * * * *')
@@ -203,6 +205,11 @@ def main():
 
         custom_events = CustomClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start)
         custom_events.run()
+
+        session = airflow.settings.Session()
+        pool = airflow.models.Pool(pool=pool_name, slots=5)
+        session.add(pool)
+        session.commit()
 
     client.close()
     logger.info('Finished exporting clickstream DAGs.')

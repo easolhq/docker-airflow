@@ -7,10 +7,9 @@ import abc
 import logging
 import os
 
-
 from airflow import DAG
 from airflow.models import Pool
-from airflow.settings import Session
+from airflow.utils.db import provide_session
 from airflow.operators import S3ClickstreamKeySensor
 from airflow.operators.dummy_operator import DummyOperator
 
@@ -184,8 +183,8 @@ class CustomClickstreamEvents(ClickstreamEvents):
         """Create the branch for custom event types."""
         self._create_events_branch(task_id='event_tables')
 
-
-def main():
+@provide_session
+def main(session=None):
     """Create clickstream DAG with branches for clickstream events grouped by type."""
     global default_args
 
@@ -194,7 +193,7 @@ def main():
 
     for workflow in workflows:
         default_args['app_id'] = workflow['_id']
-        pool_name = "redshift_loader_".format(workflow['_id'])
+        pool_name = "redshift_loader_{}_{}".format(workflow['_id'], 5)
         workflow['pool'] = pool_name
 
         # TODO: flip back to old schedule when done testing - 15 * * * *
@@ -209,10 +208,14 @@ def main():
         custom_events = CustomClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start)
         custom_events.run()
 
-        session = Session()
         pool = Pool(pool=pool_name, slots=5)
-        session.add(pool)
-        session.commit()
+        pool_query = session.query(Pool)
+        pool_query = pool_query.filter(Pool.pool == pool_name)
+        pool_query = pool_query.filter(Pool.slots == 5)
+        pool_query_result = pool_query.limit(1).all()
+        if len(pool_query_result) == 0:
+            session.add(pool)
+            session.commit()
 
     client.close()
     logger.info('Finished exporting clickstream DAGs.')

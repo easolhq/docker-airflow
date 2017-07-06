@@ -38,7 +38,7 @@ default_args = config_default_args()
 # TODO: Update Name and Version to check for exsitance and defalut to ''
 
 
-class ClickstreamEvents(object):
+class ClickstreamEventsBranch(object):
     """Base class for sensing and processing clickstream events."""
 
     __metaclass__ = abc.ABCMeta
@@ -127,7 +127,7 @@ class ClickstreamEvents(object):
             self.create_copy_operator(table=table)
 
 
-class StandardClickstreamEvents(ClickstreamEvents):
+class StandardEventsBranch(ClickstreamEventsBranch):
     """Concrete class for sensing and processing built-in clickstream events."""
 
     def get_events(self):
@@ -139,7 +139,7 @@ class StandardClickstreamEvents(ClickstreamEvents):
         branch_task_id = 'default_tables'
 
 
-class CustomClickstreamEvents(ClickstreamEvents):
+class CustomEventsBranch(ClickstreamEventsBranch):
     """Concrete class for sensing and processing custom clickstream events."""
 
     def __init__(self, workflow, *args, **kwargs):
@@ -183,8 +183,8 @@ def main(session=None):
 
         start = DummyOperator(task_id='start', dag=dag, resources=dict(organizationId='astronomer'))
 
-        clickstream_dag_classes = (StandardClickstreamEvents, CustomClickstreamEvents)
-        for cls in clickstream_dag_classes:
+        clickstream_branch_classes = (StandardEventsBranch, CustomEventsBranch)
+        for cls in clickstream_branch_classes:
             cls(workflow=workflow, dag=dag, upstream_task=start).run()
 
         pool = Pool(pool=pool_name, slots=5)

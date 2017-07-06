@@ -68,16 +68,6 @@ class ClickstreamEvents(object):
         """Get the clickstream events relevant to the subclass (to be implemented in each subclass)."""
         raise NotImplementedError
 
-    def _create_events_branch(self):
-        """Create the DAG branch with sensor and operator (to be called by each subclass)."""
-        self._grouper_task = DummyOperator(task_id=self.Meta.branch_task_id, dag=self.dag, resources=dict(organizationId='astronomer'))
-        self._grouper_task.set_upstream(self.upstream_task)
-
-        tables = self.get_events()
-        for table in tables:
-            self.create_key_sensor(table=table)
-            self.create_copy_operator(table=table)
-
     def create_key_sensor(self, table):
         """Create the S3 key sensor."""
         self._sensor_task = S3ClickstreamKeySensor(
@@ -127,8 +117,14 @@ class ClickstreamEvents(object):
         self._copy_task.set_upstream(self._sensor_task)
 
     def run(self):
-        """Run the tasks of this branch."""
-        self._create_events_branch()
+        """Create the DAG branch with sensor and operator (to be called by each subclass)."""
+        self._grouper_task = DummyOperator(task_id=self.Meta.branch_task_id, dag=self.dag, resources=dict(organizationId='astronomer'))
+        self._grouper_task.set_upstream(self.upstream_task)
+
+        tables = self.get_events()
+        for table in tables:
+            self.create_key_sensor(table=table)
+            self.create_copy_operator(table=table)
 
 
 class StandardClickstreamEvents(ClickstreamEvents):

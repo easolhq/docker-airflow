@@ -72,10 +72,15 @@ class ClickstreamEvents(object):
     def event_group_name(self):
         raise NotImplementedError
 
-    def _create_events_branch(self, task_id):
+    @abc.abstractproperty
+    def branch_task_id(self):
+        """The ID of the dummy task that groups an event branch."""
+        raise NotImplementedError
+        
+    def _create_events_branch(self):
         """Create the DAG branch with sensor and operator (to be called by each subclass)."""
         tables = self.get_events()
-        tables_op = DummyOperator(task_id=task_id, dag=self.dag, resources=dict(organizationId='astronomer'))
+        tables_op = DummyOperator(task_id=self.branch_task_id, dag=self.dag, resources=dict(organizationId='astronomer'))
         tables_op.set_upstream(self.upstream_task)
 
         for table in tables:
@@ -137,7 +142,7 @@ class ClickstreamEvents(object):
 
     def run(self):
         """Run the tasks of this branch."""
-        self.create_branch()
+        self._create_events_branch()
 
 
 class StandardClickstreamEvents(ClickstreamEvents):
@@ -147,15 +152,15 @@ class StandardClickstreamEvents(ClickstreamEvents):
     def event_group_name(self):
         return 'standard'
 
+    @property
+    def branch_task_id(self):
+        return 'default_tables'
+
     def get_events(self):
         """Return the set of built-in event names."""
         return self.standard_events
 
-    def create_branch(self):
-        """Create the branch for built-in event types."""
-        self._create_events_branch(task_id='default_tables')
-
-
+    
 class CustomClickstreamEvents(ClickstreamEvents):
     """Concrete class for sensing and processing custom clickstream events."""
 
@@ -173,16 +178,16 @@ class CustomClickstreamEvents(ClickstreamEvents):
     def event_group_name(self):
         return 'custom'
 
+    @property
+    def branch_task_id(self):
+        return 'event_tables'
+    
     def get_events(self):
         """Return the set of custom event names."""
         all_events = set(self.all_events)
         standard_events = set(self.standard_events)
         custom_events = list(all_events - standard_events)
         return custom_events
-
-    def create_branch(self):
-        """Create the branch for custom event types."""
-        self._create_events_branch(task_id='event_tables')
 
 
 @provide_session

@@ -1,5 +1,5 @@
 import os
-from airflow.operators import S3RemoveKeyOperator
+from plugins.operators.s3_remove_key_operator import S3RemoveKeyOperator
 from .docker import create_linked_docker_operator, task_id_formatter
 
 S3_BUCKET = os.getenv('AWS_S3_TEMP_BUCKET')

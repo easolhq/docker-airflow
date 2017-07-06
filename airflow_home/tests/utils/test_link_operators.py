@@ -1,6 +1,7 @@
 from utils.dag_linker import link_operators
 from airflow.operators import DummyOperator
 from airflow import DAG
+from plugins.operators.s3_remove_key_operator import S3RemoveKeyOperator
 import datetime
 
 now = datetime.datetime.utcnow() - datetime.timedelta(hours=1)

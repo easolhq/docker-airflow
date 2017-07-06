@@ -68,19 +68,10 @@ class ClickstreamEvents(object):
         """Get the clickstream events relevant to the subclass (to be implemented in each subclass)."""
         raise NotImplementedError
 
-    @abc.abstractproperty
-    def event_group_name(self):
-        raise NotImplementedError
-
-    @abc.abstractproperty
-    def branch_task_id(self):
-        """The ID of the dummy task that groups an event branch."""
-        raise NotImplementedError
-        
     def _create_events_branch(self):
         """Create the DAG branch with sensor and operator (to be called by each subclass)."""
         tables = self.get_events()
-        tables_op = DummyOperator(task_id=self.branch_task_id, dag=self.dag, resources=dict(organizationId='astronomer'))
+        tables_op = DummyOperator(task_id=self.Meta.branch_task_id, dag=self.dag, resources=dict(organizationId='astronomer'))
         tables_op.set_upstream(self.upstream_task)
 
         for table in tables:
@@ -106,7 +97,7 @@ class ClickstreamEvents(object):
             soft_fail=True,
             poke_interval=5,
             timeout=10,
-            event_group=self.event_group_name,
+            event_group=self.Meta.event_group_name,
             resources=dict(organizationId='astronomer')
         )
         return sensor
@@ -148,19 +139,15 @@ class ClickstreamEvents(object):
 class StandardClickstreamEvents(ClickstreamEvents):
     """Concrete class for sensing and processing built-in clickstream events."""
 
-    @property
-    def event_group_name(self):
-        return 'standard'
-
-    @property
-    def branch_task_id(self):
-        return 'default_tables'
-
     def get_events(self):
         """Return the set of built-in event names."""
         return self.standard_events
 
-    
+    class Meta:
+        event_group_name = 'standard'
+        branch_task_id = 'default_tables'
+
+
 class CustomClickstreamEvents(ClickstreamEvents):
     """Concrete class for sensing and processing custom clickstream events."""
 
@@ -174,20 +161,16 @@ class CustomClickstreamEvents(ClickstreamEvents):
         """Return a list of all events."""
         return self._all_events
 
-    @property
-    def event_group_name(self):
-        return 'custom'
-
-    @property
-    def branch_task_id(self):
-        return 'event_tables'
-    
     def get_events(self):
         """Return the set of custom event names."""
         all_events = set(self.all_events)
         standard_events = set(self.standard_events)
         custom_events = list(all_events - standard_events)
         return custom_events
+
+    class Meta:
+        event_group_name = 'custom'
+        branch_task_id = 'event_tables'
 
 
 @provide_session

@@ -70,22 +70,17 @@ class ClickstreamEvents(object):
 
     def _create_events_branch(self):
         """Create the DAG branch with sensor and operator (to be called by each subclass)."""
-        tables = self.get_events()
-        tables_op = DummyOperator(task_id=self.Meta.branch_task_id, dag=self.dag, resources=dict(organizationId='astronomer'))
-        tables_op.set_upstream(self.upstream_task)
+        self._grouper_task = DummyOperator(task_id=self.Meta.branch_task_id, dag=self.dag, resources=dict(organizationId='astronomer'))
+        self._grouper_task.set_upstream(self.upstream_task)
 
+        tables = self.get_events()
         for table in tables:
-            sensor = self.create_key_sensor(table=table)
-            sensor.set_upstream(tables_op)
-            copy_task = self.create_copy_operator(table=table)
-            if not copy_task:
-                logger.info('Skipping table due to invalid config')
-                continue
-            copy_task.set_upstream(sensor)
+            self.create_key_sensor(table=table)
+            self.create_copy_operator(table=table)
 
     def create_key_sensor(self, table):
         """Create the S3 key sensor."""
-        sensor = S3ClickstreamKeySensor(
+        self._sensor_task = S3ClickstreamKeySensor(
             task_id='s3_clickstream_table_sensor_{}'.format(table),
             default_args=default_args,
             dag=self.dag,
@@ -100,7 +95,7 @@ class ClickstreamEvents(object):
             event_group=self.Meta.event_group_name,
             resources=dict(organizationId='astronomer')
         )
-        return sensor
+        self._sensor_task.set_upstream(self._grouper_task)
 
     def create_copy_operator(self, table):
         """Create the copy task."""
@@ -120,16 +115,16 @@ class ClickstreamEvents(object):
         )
 
         if not activity.is_valid():
-            return None
+            return logger.info('Skipping table due to invalid config')
 
-        copy_task = create_linked_docker_operator_simple(
+        self._copy_task = create_linked_docker_operator_simple(
             dag=self.dag,
             activity=activity.serialize(),
             force_pull=False,
             pool=self.workflow['pool'],
             resources=dict(organizationId='astronomer')
         )
-        return copy_task
+        self._copy_task.set_upstream(self._sensor_task)
 
     def run(self):
         """Run the tasks of this branch."""

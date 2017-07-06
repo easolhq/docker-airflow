@@ -51,7 +51,7 @@ def create_docker_operator(params):
     return DockerOperator(**docker_params)
 
 
-def create_linked_docker_operator_simple(dag, activity, pool=None, resources=None):
+def create_linked_docker_operator_simple(dag, activity, force_pull=None, pool=None, resources=None):
     """
     Adapter to work around the tuple in called function signature.
 
@@ -59,10 +59,10 @@ def create_linked_docker_operator_simple(dag, activity, pool=None, resources=Non
     most of these args with Clickstream DAGs.
     """
     activity_tuple = (0, activity)
-    return create_linked_docker_operator(dag, [], '', activity_tuple, pool, resources)
+    return create_linked_docker_operator(dag, [], '', activity_tuple, force_pull=force_pull, pool=pool, resources=resources)
 
 
-def create_linked_docker_operator(dag, activity_list, initial_task_id, activity_tuple, pool=None, resources=None):
+def create_linked_docker_operator(dag, activity_list, initial_task_id, activity_tuple, force_pull=None, pool=None, resources=None):
     """
     Creates a DockerOperator from the activity in activity_tuple,
     configured to pull Xcoms from the previous task
@@ -126,8 +126,9 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, activity_
         'AWS_S3_CLICKSTREAM_BUCKET': os.getenv('AWS_S3_CLICKSTREAM_BUCKET', '')
     }
 
-    # Force pull in prod, use local in dev.
-    force_pull = ast.literal_eval(os.getenv('FORCE_PULL_TASK_IMAGES', 'True'))
+    if force_pull == None:
+        # Force pull in prod, use local in dev.
+        force_pull = ast.literal_eval(os.getenv('FORCE_PULL_TASK_IMAGES', 'True'))
 
     # Create final dictionary for the DockerOperator
     params = {

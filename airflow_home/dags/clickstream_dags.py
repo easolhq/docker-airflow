@@ -129,6 +129,7 @@ class ClickstreamEvents(object):
         copy_task = create_linked_docker_operator_simple(
             dag=self.dag,
             activity=activity.serialize(),
+            force_pull=False,
             pool=self.workflow['pool'],
             resources=dict(organizationId='astronomer')
         )

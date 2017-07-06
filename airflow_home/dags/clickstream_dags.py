@@ -192,11 +192,9 @@ def main(session=None):
 
         start = DummyOperator(task_id='start', dag=dag, resources=dict(organizationId='astronomer'))
 
-        standard_events = StandardClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start)
-        standard_events.run()
-
-        custom_events = CustomClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start)
-        custom_events.run()
+        clickstream_dag_classes = (StandardClickstreamEvents, CustomClickstreamEvents)
+        for cls in clickstream_dag_classes:
+            cls(workflow=workflow, dag=dag, upstream_task=start).run()
 
         pool = Pool(pool=pool_name, slots=5)
         pool_query = session.query(Pool)

@@ -155,29 +155,30 @@ class MongoClient:
         """Load configs for FTP DAGs."""
         return self.db.ftpConfigs.aggregate(self._build_pipeline())
 
-    def clickstream_configs(self):
-        """Load configs for Clickstream DAGs."""
-        # TODO: when v2 comes out will need to add a look up for the connection
-        return self.db.integrationConfigs.find({
-            'integration': 'amazon-redshift',
-            'config.tables': {
-                '$exists': True,
-            },
-        })
-
     def close(self):
         """Close Mongo connection."""
         self.client.close()
 
 
-def _load_configs(method_name):
-    """Proxy load workflow configs for one type of DAG."""
-    mongo = MongoClient()
-    workflows = getattr(mongo, method_name)()
-    mongo.close()
-    return workflows
+class AbstractWorkflows:
+    """Base class for loading workflow configs."""
+
+    def load(self, method_name):
+        """Proxy load workflow configs for one type of DAG."""
+        self.mongo = MongoClient()
+        workflows = self.load_configs()
+        self.mongo.close()
+        return workflows
 
 
-def load_clickstream_configs():
-    """Proxy load clickstream workflow configs."""
-    return _load_configs('clickstream_configs')
+class ClickstreamWorkflows(AbstractWorkflows):
+    """Clickstream DAGs workflow configs."""
+
+    def load_configs(self):
+        # TODO: when v2 comes out will need to add a look up for the connection
+        return self.mongo.db.integrationConfigs.find({
+            'integration': 'amazon-redshift',
+            'config.tables': {
+                '$exists': True,
+            },
+        })

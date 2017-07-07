@@ -181,8 +181,12 @@ class MongoClient:
         self.client.close()
 
 
-def load_clickstream_configs():
+def _load_configs(method_name):
     mongo = MongoClient()
-    workflows = mongo.clickstream_configs()
+    workflows = getattr(mongo, method_name)()
     mongo.close()
     return workflows
+
+
+def load_clickstream_configs():
+    return _load_configs('clickstream_configs')

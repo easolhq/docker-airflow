@@ -17,7 +17,7 @@ from airflow.operators.dummy_operator import DummyOperator
 
 from utils.config import ClickstreamActivity
 from utils.defaults import config_default_args
-from utils.db import MongoClient
+from utils.db import load_clickstream_configs
 from utils.docker import create_linked_docker_operator_simple
 from utils.redshift import build_dag_id
 from utils.s3 import config_s3_new
@@ -190,10 +190,7 @@ def main(session=None):
     """Create clickstream DAG with branches for clickstream events grouped by type."""
     global default_args
 
-    mongo = MongoClient()
-    workflows = mongo.clickstream_configs()
-    mongo.close()
-
+    workflows = load_clickstream_configs()
     for workflow in workflows:
         default_args['app_id'] = workflow['_id']
         pool_name = "redshift_loader_{}_{}".format(workflow['_id'], 5)

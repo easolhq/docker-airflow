@@ -10,7 +10,7 @@ config_s3()
 
 class S3RemoveKeyOperator(BaseOperator):
     """Removes upstream DAG keys"""
-    template_fields = ('bucket_keys')
+    template_fields = ['bucket_keys']
 
     @apply_defaults
     def __init__(self, bucket_keys, bucket_name, *args, **kwargs):

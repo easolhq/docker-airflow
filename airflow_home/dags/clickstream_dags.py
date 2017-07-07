@@ -190,9 +190,9 @@ def main(session=None):
     """Create clickstream DAG with branches for clickstream events grouped by type."""
     global default_args
 
-    client = MongoClient()
-    workflows = client.clickstream_configs()
-    client.close()
+    mongo = MongoClient()
+    workflows = mongo.clickstream_configs()
+    mongo.close()
 
     for workflow in workflows:
         default_args['app_id'] = workflow['_id']

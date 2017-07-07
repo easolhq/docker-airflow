@@ -126,7 +126,7 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, activity_
         'AWS_S3_CLICKSTREAM_BUCKET': os.getenv('AWS_S3_CLICKSTREAM_BUCKET', '')
     }
 
-    if force_pull == None:
+    if force_pull is None:
         # Force pull in prod, use local in dev.
         force_pull = ast.literal_eval(os.getenv('FORCE_PULL_TASK_IMAGES', 'True'))
 

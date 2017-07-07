@@ -2,6 +2,7 @@
 Load config objects for DAGs from Mongo.
 """
 
+import abc
 import os
 import ssl
 
@@ -162,6 +163,13 @@ class MongoClient:
 
 class AbstractWorkflows:
     """Base class for loading workflow configs."""
+
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def load_configs(self):
+        """Load this workflow's configs from database (to be implemented in each subclass)."""
+        raise NotImplementedError
 
     def load(self):
         """Proxy load workflow configs for one type of DAG."""

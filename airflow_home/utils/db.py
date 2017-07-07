@@ -179,3 +179,10 @@ class MongoClient:
         TODO
         """
         self.client.close()
+
+
+def load_clickstream_configs():
+    mongo = MongoClient()
+    workflows = mongo.clickstream_configs()
+    mongo.close()
+    return workflows

@@ -19,7 +19,6 @@ class MongoClient:
         print('Connecting to mongodb.')
         self.client = pymongo.MongoClient(mongo_url, ssl_cert_reqs=ssl.CERT_NONE)
         self.db = self.client.get_default_database()
-        self.pipeline = self._build_pipeline()
 
     def _build_pipeline(self):
         """
@@ -149,19 +148,19 @@ class MongoClient:
         """
         TODO
         """
-        return self.db.workflows.aggregate(self.pipeline)
+        return self.db.workflows.aggregate(self._build_pipeline())
 
     def webhook_configs(self):
         """
         TODO
         """
-        return self.db.webhookConfigs.aggregate(self.pipeline)
+        return self.db.webhookConfigs.aggregate(self._build_pipeline())
 
     def ftp_configs(self):
         """
         TODO
         """
-        return self.db.ftpConfigs.aggregate(self.pipeline)
+        return self.db.ftpConfigs.aggregate(self._build_pipeline())
 
     def clickstream_configs(self):
         """

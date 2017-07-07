@@ -1,6 +1,7 @@
 import os
-import pymongo
 import ssl
+
+import pymongo
 
 
 class MongoClient:

@@ -163,7 +163,7 @@ class MongoClient:
 class AbstractWorkflows:
     """Base class for loading workflow configs."""
 
-    def load(self, method_name):
+    def load(self):
         """Proxy load workflow configs for one type of DAG."""
         self.mongo = MongoClient()
         workflows = self.load_configs()

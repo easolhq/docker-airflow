@@ -192,6 +192,7 @@ def main(session=None):
 
     client = MongoClient()
     workflows = client.clickstream_configs()
+    client.close()
 
     for workflow in workflows:
         default_args['app_id'] = workflow['_id']
@@ -219,7 +220,6 @@ def main(session=None):
             session.add(pool)
             session.commit()
 
-    client.close()
     logger.info('Finished exporting clickstream DAGs.')
 
 

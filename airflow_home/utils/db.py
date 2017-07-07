@@ -1,3 +1,7 @@
+"""
+Load config objects for DAGs from Mongo.
+"""
+
 import os
 import ssl
 
@@ -5,14 +9,10 @@ import pymongo
 
 
 class MongoClient:
-    """
-    TODO
-    """
+    """Wrap PyMongo client for loading workflow config objects."""
 
     def __init__(self):
-        """
-        TODO
-        """
+        """Instantiate PyMongo client."""
         # Get mongo url.
         mongo_url = os.getenv('MONGO_URL', '')
 
@@ -22,9 +22,7 @@ class MongoClient:
         self.db = self.client.get_default_database()
 
     def _build_pipeline(self):
-        """
-        Build an aggregation pipeline that populates connections and VPN connections.
-        """
+        """Build an aggregation pipeline that populates connections and VPN connections."""
         pipeline = [
             # stage 1: unwind all activities
             {
@@ -146,27 +144,19 @@ class MongoClient:
         return pipeline
 
     def workflow_configs(self):
-        """
-        TODO
-        """
+        """Load configs for Cloud DAGs."""
         return self.db.workflows.aggregate(self._build_pipeline())
 
     def webhook_configs(self):
-        """
-        TODO
-        """
+        """Load configs for Webhook DAGs."""
         return self.db.webhookConfigs.aggregate(self._build_pipeline())
 
     def ftp_configs(self):
-        """
-        TODO
-        """
+        """Load configs for FTP DAGs."""
         return self.db.ftpConfigs.aggregate(self._build_pipeline())
 
     def clickstream_configs(self):
-        """
-        TODO
-        """
+        """Load configs for Clickstream DAGs."""
         # TODO: when v2 comes out will need to add a look up for the connection
         return self.db.integrationConfigs.find({
             'integration': 'amazon-redshift',
@@ -176,13 +166,12 @@ class MongoClient:
         })
 
     def close(self):
-        """
-        TODO
-        """
+        """Close Mongo connection."""
         self.client.close()
 
 
 def _load_configs(method_name):
+    """Proxy load workflow configs for one type of DAG."""
     mongo = MongoClient()
     workflows = getattr(mongo, method_name)()
     mongo.close()
@@ -190,4 +179,5 @@ def _load_configs(method_name):
 
 
 def load_clickstream_configs():
+    """Proxy load clickstream workflow configs."""
     return _load_configs('clickstream_configs')

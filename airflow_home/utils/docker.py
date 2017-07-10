@@ -40,7 +40,7 @@ def create_docker_operator(params):
     defaults = {
         'remove': True,
         'xcom_push': True,
-        'volumes': ['/var/log/filebeat/aries:/usr/local/src/log']
+        'volumes': ['/var/log/filebeat:/usr/local/src/log']
     }
 
     # Merge params.

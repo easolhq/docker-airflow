@@ -2,7 +2,7 @@ import os
 
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
-from plugins.operators import S3FileKeySensor
+from airflow.operators import S3FileKeySensor
 from utils.db import MongoClient
 from utils.docker import create_docker_operator
 from utils.create_dag import create_dag

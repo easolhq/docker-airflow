@@ -123,6 +123,7 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, activity_
         'AWS_SECRET_ACCESS_KEY': os.getenv('AWS_SECRET_ACCESS_KEY', ''),
         'AWS_REGION': os.getenv('AWS_REGION', ''),
         'AWS_S3_TEMP_BUCKET': os.getenv('AWS_S3_TEMP_BUCKET', ''),
+        'ARIES_REMOVE_FILES_AFTER_TASK': 'TRUE',
         'AWS_S3_CLICKSTREAM_BUCKET': os.getenv('AWS_S3_CLICKSTREAM_BUCKET', '')
     }
 

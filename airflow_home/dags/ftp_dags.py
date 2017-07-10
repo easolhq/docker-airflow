@@ -7,7 +7,7 @@ import os
 
 from airflow import DAG
 from airflow.hooks.base_hook import CONN_ENV_PREFIX
-from plugins.operators import (
+from airflow.operators import (
     S3FileKeySensor, S3WildcardKeySensor, S3GetKeyOperator,
 )
 

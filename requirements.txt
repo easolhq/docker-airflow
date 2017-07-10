@@ -16,5 +16,4 @@ pycodestyle==2.2.0
 pymesos==0.2.13
 addict==2.1.0
 marshmallow==2.13.5
-
-https://github.com/astronomerio/boa/archive/master.zip  # TODO: cut a boa-str release once we've stabilized
+boa-str==1.1.0

@@ -10,3 +10,21 @@ def build_xcom(path):
     """
     logging.info('Pushing path "{}" to XCom'.format(path))
     return json.dumps({'input': {'key': path}})
+
+
+def parse_keys(keys):
+    """Parses input string and returns list of stringified S3 keys"""
+    stringified_keys = keys[1:-1]
+    activity_key_list = key_splitter(stringified_keys)
+    unique_key_list = []
+    for key in activity_key_list:
+        obj = json.loads(key)
+        if isinstance(obj['input'], dict):
+            unique_key_list.append(obj['input']['key'])
+    print(unique_key_list)
+    return unique_key_list
+
+
+def key_splitter(key_string):
+    """Splits input string returning only the dicts as strings"""
+    return key_string.split('\'')[1::2]

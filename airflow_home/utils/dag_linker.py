@@ -52,7 +52,7 @@ def s3_key_retrieval(activity_list, tasks):
         task_id_formatter(index, activity_list[index]) for index, activity in enumerate(activity_list)
     ]
     script = """
-        '{{ task_instance.xcom_pull(task_ids=params.bucket_keys) }}'
+        {{ task_instance.xcom_pull(task_ids=params.bucket_keys) }}
     """
     params = {'bucket_keys': bucket_keys}
     return S3RemoveKeyOperator(

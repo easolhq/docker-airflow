@@ -1,9 +1,11 @@
 import os.path
+import json
 
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 from plugins.operators.common import config_s3
 from plugins.hooks import S3FileHook
+from plugins.operators.utils import parse_keys
 
 config_s3()
 
@@ -20,5 +22,6 @@ class S3RemoveKeyOperator(BaseOperator):
 
     def execute(self, context):
         hook = S3FileHook(s3_conn_id='S3_CONNECTION')
-        for key in self.bucket_keys:
-            hook.delete_key(key)
+        formatted_keys = parse_keys(self.bucket_keys)
+        for key in formatted_keys:
+            hook.delete_s3_key(key, self.bucket_name)

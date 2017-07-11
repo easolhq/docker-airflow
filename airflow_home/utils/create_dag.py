@@ -1,3 +1,4 @@
+import os
 import datetime
 
 import boa
@@ -7,16 +8,18 @@ from utils.docker import create_linked_docker_operator
 now = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
 start_date = datetime.datetime(now.year, now.month, now.day, now.hour)
 
+email = os.getenv('AIRFLOW_ALERTS_EMAIL', '')
+email_on_failure = os.getenv('AIRFLOW_EMAIL_ON_FAILURE', 'False') == 'True'
+
 default_args = {
     'owner': 'astronomer',
     'depends_on_past': False,
     'start_date': start_date,
-    'email': 'greg@astronomer.io',
-    'email_on_failure': False,
+    'email': email,
+    'email_on_failure': email_on_failure,
     'email_on_retry': False,
     'retries': 1,
     'retry_delay': datetime.timedelta(minutes=5),
-    'resources': dict(organizationId='astronomer')
 }
 
 

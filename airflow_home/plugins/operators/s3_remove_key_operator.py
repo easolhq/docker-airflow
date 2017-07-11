@@ -1,5 +1,4 @@
 import os.path
-import json
 
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
@@ -25,3 +24,4 @@ class S3RemoveKeyOperator(BaseOperator):
         formatted_keys = parse_keys(self.bucket_keys)
         for key in formatted_keys:
             hook.delete_s3_key(key, self.bucket_name)
+        print('Deleted keys: {keys}'.format(keys=formatted_keys))

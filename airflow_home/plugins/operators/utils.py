@@ -21,7 +21,6 @@ def parse_keys(keys):
         obj = json.loads(key)
         if isinstance(obj['input'], dict):
             unique_key_list.append(obj['input']['key'])
-    print(unique_key_list)
     return unique_key_list
 
 

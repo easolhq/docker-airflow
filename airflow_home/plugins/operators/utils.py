@@ -19,7 +19,7 @@ def parse_keys(keys):
     unique_key_list = []
     for key in activity_key_list:
         obj = json.loads(key)
-        if isinstance(obj['input'], dict):
+        if 'input' in obj and isinstance(obj['input'], dict):
             unique_key_list.append(obj['input']['key'])
     return unique_key_list
 

@@ -199,9 +199,7 @@ def main(session=None):
         workflow['pool'] = pool_name
 
         # TODO: flip back to old schedule when done testing - 15 * * * *
-        dag = DAG(
-            dag_id=build_dag_id(workflow), default_args=default_args,
-            schedule_interval='15 * * * *', catchup=False)
+        dag = DAG(dag_id=build_dag_id(workflow), default_args=default_args, schedule_interval='15 * * * *', catchup=False)
         globals()[workflow['_id']] = dag
 
         start = DummyOperator(task_id='start', dag=dag, resources=dict(organizationId='astronomer'))

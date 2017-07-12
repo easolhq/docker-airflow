@@ -40,16 +40,16 @@ def copy_env_var(command, env_var_name):
 def offer_suitable(task_instance, cpus=0, mem=0, offerOrgIds=[]):
     is_suitable = True
     if task_instance.resources.cpu.value > cpus:
-        logging.info("offer doesn't have enough cpu")
+        logging.debug("offer doesn't have enough cpu")
         is_suitable = False
     if task_instance.resources.ram.value > mem:
-        logging.info("offer doesn't have enough mem")
+        logging.debug("offer doesn't have enough mem")
         is_suitable = False
     if not hasattr(task_instance.resources, 'organizationId'):
         logging.info("task_instance doesn't have organizationId")
         return False
     if task_instance.resources.organizationId.value not in offerOrgIds:
-        logging.info("offer doesn't have organizationId")
+        logging.debug("offer doesn't have organizationId")
         is_suitable = False
     return is_suitable
 
@@ -121,10 +121,10 @@ class AirflowMesosScheduler(Scheduler):
         raise AirflowException("AirflowScheduler driver aborted %s" % message)
 
     def resourceOffers(self, driver, offers):
-        logging.info("got offers: {}".format(offers))
-        logging.info("task_counter: {}".format(self.task_counter))
-        logging.info("task_key_map: {}".format(self.task_key_map))
-        logging.info("task_queue.qsize: {}".format(self.task_queue.qsize()))
+        logging.debug("got offers: {}".format(offers))
+        logging.debug("task_counter: {}".format(self.task_counter))
+        logging.debug("task_key_map: {}".format(self.task_key_map))
+        logging.debug("task_queue.qsize: {}".format(self.task_queue.qsize()))
 
         for offer in offers:
             tasks = []
@@ -147,7 +147,7 @@ class AirflowMesosScheduler(Scheduler):
             remainingMem = offerMem
 
             if self.task_queue.empty():
-                logging.info("task_queue is empty")
+                logging.debug("task_queue is empty")
 
             while (not self.task_queue.empty()):
                 key, cmd, task_instance = self.task_queue.get()
@@ -193,6 +193,13 @@ class AirflowMesosScheduler(Scheduler):
 
                 # Copy some environment vars from scheduler to execution docker container
                 copy_env_var(command, "AIRFLOW__CORE__SQL_ALCHEMY_CONN")
+                copy_env_var(command, "AIRFLOW__SMTP__SMTP_HOST")
+                copy_env_var(command, "AIRFLOW__SMTP__SMTP_STARTTLS")
+                copy_env_var(command, "AIRFLOW__SMTP__SMTP_SSL")
+                copy_env_var(command, "AIRFLOW__SMTP__SMTP_USER")
+                copy_env_var(command, "AIRFLOW__SMTP__SMTP_PORT")
+                copy_env_var(command, "AIRFLOW__SMTP__SMTP_PASSWORD")
+                copy_env_var(command, "AIRFLOW__SMTP__SMTP_MAIL_FROM")
                 copy_env_var(command, "AWS_ACCESS_KEY_ID")
                 copy_env_var(command, "AWS_SECRET_ACCESS_KEY")
 
@@ -350,8 +357,8 @@ class AstronomerMesosExecutor(BaseExecutor):
                 dag = dag_pickle.pickle
                 dag_id, task_id, execution_date = key
                 task_instance = dag.get_task(task_id=task_id)
-                logging.info('Have matching task %s', task_instance)
-                logging.info('requires resources: %s', task_instance.resources)
+                logging.debug('Have matching task %s', task_instance)
+                logging.debug('requires resources: %s', task_instance.resources)
         # query dag_pickle table with pickle from command
         # get the task matching key off dag.tasks
         self.task_queue.put((key, command, task_instance))
@@ -376,7 +383,7 @@ class AstronomerMesosExecutor(BaseExecutor):
 
     def find_pickle(self, pickle_id):
         session = Session()
-        logging.info(f'Loading pickle id {pickle_id}')
+        logging.debug(f'Loading pickle id {pickle_id}')
         dag_pickle = session.query(
             DagPickle).filter(DagPickle.id == pickle_id).first()
         return dag_pickle

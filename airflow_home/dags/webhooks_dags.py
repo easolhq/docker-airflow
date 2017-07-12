@@ -1,26 +1,11 @@
-from airflow import DAG
-from airflow.operators import S3FileKeySensor
-from airflow.operators import DummyOperator
-from datetime import datetime, timedelta
-from fn.func import F
-import stringcase as case
 import os
-from utils.docker import create_docker_operator, create_linked_docker_operator
+
+from airflow import DAG
+from airflow.operators.dummy_operator import DummyOperator
+from airflow.operators import S3FileKeySensor
 from utils.db import MongoClient
-
-now = datetime.utcnow() - timedelta(hours=1)
-start_date = datetime(now.year, now.month, now.day, now.hour)
-
-default_args = {
-    'owner': 'astronomer',
-    'depends_on_past': False,
-    'start_date': start_date,
-    'email': 'greg@astronomer.io',
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
-}
+from utils.docker import create_docker_operator
+from utils.create_dag import create_dag
 
 # Query for all webhooks.
 print('Querying for cloud webhooks.')
@@ -29,31 +14,19 @@ webhooks = client.webhook_configs()
 
 for webhook in webhooks:
     # Get the webhook id.
-    webhook_id = webhook['_id']
-
-    # Get the name of the webhook.
-    webhook_name = webhook['name'] if 'name' in webhook else None
-
-    # Lower and snake case the name if we have one, else just id.
-    name = webhook_id if not webhook_name else '{name}__webhooks__{id}'.format(
-        id=webhook_id,
-        name=case.snakecase(case.lowercase(webhook_name)))
-
-    print('Building DAG: {name}.').format(name=name)
-
+    id_ = webhook['_id']
     # Airflow looks at module globals for DAGs, so assign each webhook to
     # a global variable using it's id.
-    dag = globals()[webhook_id] = DAG(
-        name,
-        default_args=default_args,
-        schedule_interval='*/15 * * * *')
+# TODO: do we need initial_task_id still
+    dag = create_dag(webhook, schedule_interval='*/15 * * * *', dag_cls=DAG, dag_type='webhooks')
+    globals()[id_] = dag
 
     dummy = DummyOperator(
         task_id='start',
         dag=dag)
 
     # The params for the sensor.
-    sensor_params = {'webhook_id': webhook_id}
+    sensor_params = {'webhook_id': id_}
 
     # Prefix to search for.
     prefix = 'webhooks/{{ params.webhook_id }}/{{ ts }}/{{ ds }}'
@@ -78,7 +51,7 @@ for webhook in webhooks:
         '{{ ts }}'
     """
     # Merge command params.
-    merge_params = {'webhook_id': webhook_id, 'bucket': os.getenv('AWS_S3_TEMP_BUCKET')}
+    merge_params = {'webhook_id': id_, 'bucket': os.getenv('AWS_S3_TEMP_BUCKET')}
 
     # Create docker container operator for s3_merge_source.
     merge = create_docker_operator({
@@ -91,18 +64,7 @@ for webhook in webhooks:
 
     merge.set_upstream(sensor)
 
-    # Grab activity list.
-    activity_list = webhook['activityList']
+    dag.tasks[0].set_upstream(merge)
 
-    # List to hold activities to setup dependencies after creation.
-    tasks = map(F(create_linked_docker_operator, dag, activity_list, 's3_merge_source'), enumerate(activity_list))
-
-    # Loop through tasks and set dependencies.
-    # TODO: Support `dependsOn` for full blown dags in mongo.
-    for i, current in enumerate(tasks):
-        if (i == 0):
-            current.set_upstream(merge)
-        else:
-            current.set_upstream(tasks[i - 1])
-
+print('Finished exporting webhook DAGS')
 client.close()

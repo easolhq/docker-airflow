@@ -1,0 +1,9 @@
+DOCKER-AIRFLOW 1.1.0, 2017-07-11
+- apache-airflow at version 1.8.1
+- Docker image bundles Python 3.6.1
+- AstronomerMesosExecutor is now bundled as a plugin
+- AstronomerMesosExecutor uses py-mesos internally, which uses the Mesos HTTP API instead of the Mesos native interface
+- Workflows can now have Resources, allowing for tasks to run on specific nodes for example
+- Email alerts can now be enabled. Configured via env vars
+- DAG building has been encapsulated primarily in utils/create_dag.py
+- entrypoint.sh uses the standard wait-for-it.sh to wait for postgres to be ready

@@ -26,4 +26,6 @@ def parse_keys(keys):
 
 def key_splitter(key_string):
     """Splits input string returning only the dicts as strings"""
+    # Split creates list with characters and dicts.
+    # Dicts are every odd value in list, hence the [1::2]
     return key_string.split('\'')[1::2]

@@ -32,9 +32,9 @@ class S3FileHook(S3Hook):
         key_matches = exclude_dirs(key_matches)
         return bucket, key_matches
 
-    def delete_s3_key(self, key, bucket_name):
+    def delete_s3_key(self, key_list, bucket_name):
         """Removes S3 Key"""
         if not bucket_name:
-            (bucket_name, key) = self.parse_s3_url(key)
+            (bucket_name, key) = self.parse_s3_url(key_list[0])
         bucket = self.get_bucket(bucket_name)
-        return bucket.delete_key(key)
+        return bucket.delete_keys(key_list)

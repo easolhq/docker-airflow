@@ -22,6 +22,5 @@ class S3RemoveKeyOperator(BaseOperator):
     def execute(self, context):
         hook = S3FileHook(s3_conn_id='S3_CONNECTION')
         formatted_keys = parse_keys(self.bucket_keys)
-        for key in formatted_keys:
-            hook.delete_s3_key(key, self.bucket_name)
-        print('Deleted keys: {keys}'.format(keys=formatted_keys))
+        deleted_keys = hook.delete_s3_key(formatted_keys, self.bucket_name)
+        print('Removed activity S3 files')

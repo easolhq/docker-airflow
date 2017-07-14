@@ -51,7 +51,13 @@ def create_docker_operator(params):
     return DockerOperator(**docker_params)
 
 
-def create_linked_docker_operator_simple(dag, activity, force_pull=None, pool=None, resources=None):
+def create_linked_docker_operator_simple(
+        dag, activity,
+        retries=None,
+        retry_delay=None,
+        force_pull=None,
+        pool=None,
+        resources=None):
     """
     Adapter to work around the tuple in called function signature.
 
@@ -59,10 +65,22 @@ def create_linked_docker_operator_simple(dag, activity, force_pull=None, pool=No
     most of these args with Clickstream DAGs.
     """
     activity_tuple = (0, activity)
-    return create_linked_docker_operator(dag, [], '', activity_tuple, force_pull=force_pull, pool=pool, resources=resources)
+    return create_linked_docker_operator(
+        dag, [], '', activity_tuple,
+        retries=retries,
+        retry_delay=retry_delay,
+        force_pull=force_pull,
+        pool=pool,
+        resources=resources)
 
 
-def create_linked_docker_operator(dag, activity_list, initial_task_id, activity_tuple, force_pull=None, pool=None, resources=None):
+def create_linked_docker_operator(
+        dag, activity_list, initial_task_id, activity_tuple,
+        retries=None,
+        retry_delay=None,
+        force_pull=None,
+        pool=None,
+        resources=None):
     """
     Creates a DockerOperator from the activity in activity_tuple,
     configured to pull Xcoms from the previous task
@@ -145,6 +163,14 @@ def create_linked_docker_operator(dag, activity_list, initial_task_id, activity_
         'execution_timeout': execution_timeout,
         'dag': dag
     }
+
+    retries = dag.default_args.get('retries') if retries is None else retries
+    if retries is not None:
+        params['retries'] = retries
+
+    retry_delay = dag.default_args.get('retry_delay') if retry_delay is None else retry_delay
+    if retry_delay is not None:
+        params['retry_delay'] = retry_delay
 
     # Return a new DockerOperator.
     return create_docker_operator(params)

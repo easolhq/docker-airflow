@@ -116,7 +116,7 @@ def create_linked_docker_operator(
     config_str = json.dumps(flattened_config, default=json_util.default)
 
     # The params for the command.
-    params = {'config': config_str, 'prev_task_id': prev_task_id}
+    command_params = {'config': config_str, 'prev_task_id': prev_task_id}
 
     # Format the image name.
     version = activity['version'] if 'version' in activity else 'latest'
@@ -151,13 +151,13 @@ def create_linked_docker_operator(
 
     # Create final dictionary for the DockerOperator
     params = {
+        'params': command_params,
         'task_id': task_id,
         'pool': pool,
         'image': image_name,
         'environment': env,
         'privileged': privileged,
         'command': command,
-        'params': params,
         'resources': resources,
         'force_pull': force_pull,
         'execution_timeout': execution_timeout,

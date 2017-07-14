@@ -18,7 +18,7 @@ def config_default_args():
         'email': 'greg@astronomer.io',
         'email_on_failure': False,
         'email_on_retry': False,
-        'retries': 0,
+        'retries': 1,
         'retry_delay': retry_delay,
         'app_id': None,
         'copy_table': None

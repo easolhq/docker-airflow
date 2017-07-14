@@ -1,2 +1,5 @@
 npm-debug.log
 *.pyc
+
+# virtualenv
+venv

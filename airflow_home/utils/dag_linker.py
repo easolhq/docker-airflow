@@ -21,7 +21,7 @@ def link_operators(activity_list, tasks):
     else:
         # Maps activity id to associated task operator
         activity_operators = {
-            activity['id']: tasks[idx] for idx, activity in enumerate(activity_list)
+            activity['_id']: tasks[idx] for idx, activity in enumerate(activity_list)
         }
 
         # Sets upstream dependencies

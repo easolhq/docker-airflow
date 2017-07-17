@@ -11,8 +11,8 @@ start_date = datetime.datetime(now.year, now.month, now.day, now.hour)
 def test_link_operators_no_dependencies():
     dag = DAG("test_dag", default_args={"start_date": start_date}, schedule_interval="@once")
     activity_list = [
-        {"name": "test_1", "id": 23},
-        {"name": "test_2", "id": 25}
+        {"name": "test_1", "_id": 23},
+        {"name": "test_2", "_id": 25}
     ]
     tasks = [
         DummyOperator(task_id="source", dag=dag),
@@ -25,8 +25,8 @@ def test_link_operators_no_dependencies():
 def test_link_operators_single_dependency():
     dag = DAG("test_dag", default_args={"start_date": start_date}, schedule_interval="@once")
     activity_list = [
-        {"name": "test_1", "id": 23, "dependsOn": [25]},
-        {"name": "test_2", "id": 25}
+        {"name": "test_1", "_id": 23, "dependsOn": [25]},
+        {"name": "test_2", "_id": 25}
     ]
     tasks = [
         DummyOperator(task_id="sink", dag=dag),
@@ -39,9 +39,9 @@ def test_link_operators_single_dependency():
 def test_link_operators_multiple_output():
     dag = DAG("test_dag", default_args={"start_date": start_date}, schedule_interval="@once")
     activity_list = [
-        {"name": "test_1", "id": 23, "dependsOn": [25]},
-        {"name": "test_2", "id": 24, "dependsOn": [25]},
-        {"name": "test_3", "id": 25}
+        {"name": "test_1", "_id": 23, "dependsOn": [25]},
+        {"name": "test_2", "_id": 24, "dependsOn": [25]},
+        {"name": "test_3", "_id": 25}
     ]
     tasks = [
         DummyOperator(task_id="sink_1", dag=dag),
@@ -56,9 +56,9 @@ def test_link_operators_multiple_output():
 def test_link_operators_multiple_input():
     dag = DAG("test_dag", default_args={"start_date": start_date}, schedule_interval="@once")
     activity_list = [
-        {"name": "test_1", "id": 23, "dependsOn": [25, 24]},
-        {"name": "test_2", "id": 24},
-        {"name": "test_3", "id": 25}
+        {"name": "test_1", "_id": 23, "dependsOn": [25, 24]},
+        {"name": "test_2", "_id": 24},
+        {"name": "test_3", "_id": 25}
     ]
     tasks = [
         DummyOperator(task_id="sink", dag=dag),
@@ -73,10 +73,10 @@ def test_link_operators_multiple_input():
 def test_link_operators_multiple_output_multiple_input():
     dag = DAG("test_dag", default_args={"start_date": start_date}, schedule_interval="@once")
     activity_list = [
-        {"name": "test_1", "id": 23, "dependsOn": [25, 24]},
-        {"name": "test_2", "id": 24, "dependsOn": [26]},
-        {"name": "test_3", "id": 25, "dependsOn": [26]},
-        {"name": "test_4", "id": 26}
+        {"name": "test_1", "_id": 23, "dependsOn": [25, 24]},
+        {"name": "test_2", "_id": 24, "dependsOn": [26]},
+        {"name": "test_3", "_id": 25, "dependsOn": [26]},
+        {"name": "test_4", "_id": 26}
     ]
     tasks = [
         DummyOperator(task_id="sink", dag=dag),

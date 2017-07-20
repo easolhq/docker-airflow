@@ -31,7 +31,7 @@ if SENTRY_ENABLED:
     handler.setLevel(logging.ERROR)
     setup_logging(handler)
 else:
-    logger.warn("Not attaching sentry to cloud dags because sentry is disabled")
+    logger.warn("Not attaching sentry to ftp dags because sentry is disabled")
 
 S3_BUCKET = os.getenv('AWS_S3_TEMP_BUCKET')
 aws_key = os.getenv('AWS_ACCESS_KEY_ID', '')

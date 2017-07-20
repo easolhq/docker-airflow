@@ -23,7 +23,7 @@ if SENTRY_ENABLED:
     handler.setLevel(logging.ERROR)
     setup_logging(handler)
 else:
-    logger.warn("Not attaching sentry to cloud dags because sentry is disabled")
+    logger.warn("Not attaching sentry to webhook dags because sentry is disabled")
 
 # Query for all webhooks.
 logger.info('Querying for cloud webhooks.')

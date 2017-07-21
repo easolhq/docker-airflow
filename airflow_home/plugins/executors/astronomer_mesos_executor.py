@@ -48,6 +48,10 @@ def offer_suitable(task_instance, cpus=0, mem=0, offerOrgIds=[]):
     if not hasattr(task_instance.resources, 'organizationId'):
         logging.info("task_instance doesn't have organizationId")
         return False
+    organizationId = task_instance.resources.organizationId
+    if organizationId is None:
+        logging.info("task_instance has None organizationId")
+        return False
     if task_instance.resources.organizationId.value not in offerOrgIds:
         logging.info("offer doesn't have organizationId")
         is_suitable = False

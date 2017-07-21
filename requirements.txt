@@ -1,4 +1,4 @@
--e git+https://github.com/astronomerio/incubator-airflow@astronomer-fixes-181#egg=apache-airflow[s3,postgres,password]
+-e git+https://github.com/astronomerio/incubator-airflow@astronomer-fixes-181#egg=apache-airflow[s3,postgres,password,hive]
 
 pytz==2015.7
 cryptography==1.7.2
@@ -17,3 +17,4 @@ pymesos==0.2.13
 addict==2.1.0
 marshmallow==2.13.5
 boa-str==1.1.0
+facebookads==2.9.2

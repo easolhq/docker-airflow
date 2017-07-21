@@ -1,2 +1,5 @@
 npm-debug.log
 *.pyc
+airflow.db
+unittests.cfg
+.vscode

@@ -65,6 +65,8 @@ ADD script script
 
 # Set airflow home.
 ADD airflow_home ${AIRFLOW_HOME}/
+ADD astronomer astronomer
+RUN cd astronomer && pip install -e .
 
 EXPOSE 8080 5555 8793
 WORKDIR ${AIRFLOW_HOME}

@@ -15,4 +15,5 @@ class AstronomerPlugin(AirflowPlugin):
     ]
     hooks = [
         hooks.S3FileHook,
+        hooks.FacebookAdsHook,
     ]

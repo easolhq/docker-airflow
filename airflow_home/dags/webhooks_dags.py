@@ -1,4 +1,6 @@
 import os
+import logging
+from decouple import config
 
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
@@ -7,8 +9,24 @@ from utils.db import MongoClient
 from utils.docker import create_docker_operator
 from utils.create_dag import create_dag
 
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+SENTRY_ENABLED = config('SENTRY_ENABLED', cast=bool, default=True)
+
+if SENTRY_ENABLED:
+    from raven.handlers.logging import SentryHandler
+    from raven.conf import setup_logging
+
+    SENTRY_DSN = config('SENTRY_DSN')
+    handler = SentryHandler(SENTRY_DSN)
+    handler.setLevel(logging.ERROR)
+    setup_logging(handler)
+else:
+    logger.warn("Not attaching sentry to webhook dags because sentry is disabled")
+
 # Query for all webhooks.
-print('Querying for cloud webhooks.')
+logger.info('Querying for cloud webhooks.')
 client = MongoClient()
 webhooks = client.webhook_configs()
 
@@ -66,5 +84,5 @@ for webhook in webhooks:
 
     dag.tasks[0].set_upstream(merge)
 
-print('Finished exporting webhook DAGS')
+logger.info('Finished exporting webhook DAGS')
 client.close()

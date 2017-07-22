@@ -6,6 +6,7 @@ Clickstream content ingestion via S3 bucket wildcard key into Airflow.
 import abc
 import logging
 import os
+from decouple import config
 
 from airflow import DAG
 from airflow.models import Pool
@@ -24,6 +25,19 @@ from utils.s3 import config_s3_new
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+SENTRY_ENABLED = config('SENTRY_ENABLED', cast=bool, default=True)
+
+if SENTRY_ENABLED:
+    from raven.handlers.logging import SentryHandler
+    from raven.conf import setup_logging
+
+    SENTRY_DSN = config('SENTRY_DSN')
+    handler = SentryHandler(SENTRY_DSN)
+    handler.setLevel(logging.ERROR)
+    setup_logging(handler)
+else:
+    logger.warn("Not attaching sentry to clickstream dags because sentry is disabled")
 
 S3_BUCKET = os.getenv('AWS_S3_CLICKSTREAM_BUCKET', default='astronomer-clickstream')
 BATCH_PROCESSING_IMAGE = os.getenv('CLICKSTREAM_BATCH_IMAGE', default='astronomerio/py-aries-clickstream')
@@ -199,9 +213,7 @@ def main(session=None):
         workflow['pool'] = pool_name
 
         # TODO: flip back to old schedule when done testing - 15 * * * *
-        dag = DAG(
-            dag_id=build_dag_id(workflow), default_args=default_args,
-            schedule_interval='15 * * * *', catchup=False)
+        dag = DAG(dag_id=build_dag_id(workflow), default_args=default_args, schedule_interval='15 * * * *', catchup=False)
         globals()[workflow['_id']] = dag
 
         start = DummyOperator(task_id='start', dag=dag, resources=dict(organizationId='astronomer'))

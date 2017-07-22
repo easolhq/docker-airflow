@@ -4,6 +4,8 @@ FTP content ingestion via S3 bucket wildcard key into Airflow.
 
 from urllib.parse import quote_plus
 import os
+import logging
+from decouple import config
 
 from airflow import DAG
 from airflow.hooks.base_hook import CONN_ENV_PREFIX
@@ -15,12 +17,28 @@ from utils.paths import ensure_trailing_slash
 from utils.db import MongoClient
 from utils.create_dag import create_dag
 
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+SENTRY_ENABLED = config('SENTRY_ENABLED', cast=bool, default=True)
+
+if SENTRY_ENABLED:
+    from raven.handlers.logging import SentryHandler
+    from raven.conf import setup_logging
+
+    SENTRY_DSN = config('SENTRY_DSN')
+    handler = SentryHandler(SENTRY_DSN)
+    handler.setLevel(logging.ERROR)
+    setup_logging(handler)
+else:
+    logger.warn("Not attaching sentry to ftp dags because sentry is disabled")
+
 S3_BUCKET = os.getenv('AWS_S3_TEMP_BUCKET')
 aws_key = os.getenv('AWS_ACCESS_KEY_ID', '')
 aws_secret = quote_plus(os.getenv('AWS_SECRET_ACCESS_KEY', ''))
 os.environ[CONN_ENV_PREFIX + 'S3_CONNECTION'] = 's3://{aws_key}:{aws_secret}@S3'.format(aws_key=aws_key, aws_secret=aws_secret)
 
-print('Querying for ftpConfigs')
+logger.info('Querying for ftpConfigs')
 client = MongoClient()
 ftp_configs = client.ftp_configs()
 
@@ -75,5 +93,5 @@ for ftp_config in ftp_configs:
     # when true dags lands
     dag.tasks[0].set_upstream(task_2_s3_get)
 
-print('Finished exporting FTP DAGS')
+logger.info('Finished exporting FTP DAGS')
 client.close()

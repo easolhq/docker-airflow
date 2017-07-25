@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 export PYTHONPATH=${PYTHONPATH}:$(pwd)/airflow_home
 export AIRFLOW__CORE__BASE_LOG_FOLDER=$(pwd)/logs
 export AIRFLOW__CORE__EXECUTOR=SequentialExecutor

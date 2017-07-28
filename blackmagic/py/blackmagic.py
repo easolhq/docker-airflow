@@ -4,12 +4,16 @@ Run Node in Python.
 
 import json
 import logging
+import os
+import os.path
 from collections import OrderedDict
 
 import subprocess
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+BLACKMAGIC_HOME = os.environ['BLACKMAGIC_HOME']
 
 
 def kwargs2str(kwargs_list):
@@ -27,7 +31,7 @@ def build_node_cmd(command, passphrase, obj):
         ('obj', obj),
     ])
     cmd = 'node {script} {kwargs}'.format(
-        script='../js/blackmagic.js',
+        script=os.path.join(BLACKMAGIC_HOME, 'js', 'blackmagic.js'),
         kwargs=cmd_kwargs_str,
     )
     return cmd

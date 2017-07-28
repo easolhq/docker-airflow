@@ -167,10 +167,58 @@ class MongoClient:
         """
         TODO
         """
-        # TODO: when v2 comes out will need to add a look up for the connection
+        # integration_configs = self.db.integrationConfigs.find({
+        #     'integration': 'amazon-redshift',
+        #     'config.tables': {
+        #         '$exists': True,
+        #     },
+        # })
+        # return integration_configs
+        pipeline = [
+            {'$match': {
+                'code': 'amazon-redshift',
+                # 'enabled': True,  # TODO: uncomment when done testing
+            }},
 
-        integration_configs = self.db.integrationConfigs.find({'integration': 'amazon-redshift', 'config.tables': {'$exists': True}})
-        return integration_configs
+            {'$lookup': {
+                'from': 'connectionConfigs',
+                'localField': 'connection',
+                'foreignField': '_id',
+                'as': 'connection',
+            }},
+
+            # {'$group': {
+            #     '_id': '$_id',
+            #     'connection': {'$first': '$connection'},
+            # }},
+
+            # {'$unwind', {
+            #     'path': '$connection',
+            #     # 'preserveNullAndEmptyArrays': True,
+            # }},
+
+            # {'$lookup': {
+            #     'from': 'connections',
+            #     'localField': 'connection.connectionPrototype',
+            #     'foreignField': '_id',
+            #     'as': 'connection.connectionPrototype',
+            # }},
+
+            # TODO: figure out how to flatten connection first then uncomment
+            # {'$lookup': {
+            #     'from': 'organizations',
+            #     'localField': '$connection.0.organization',
+            #     'foreignField': '_id',
+            #     'as': '$connection.0.organization',
+            # }},
+
+        ]
+        items = db.clickstreamConfigs.aggregate(pipeline)
+        # list(items).__len__()
+        # x = list(items)
+        # pprint(x)
+        return items
+
 
     def close(self):
         """

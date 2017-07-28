@@ -52,14 +52,14 @@ RUN set -ex \
 # TODO: pin node at 6.11.1
 # TODO: discuss possibly pulling blackmagic as a git submodule instead pinned
 # to tag v1.latest (master branch for now) - https://stackoverflow.com/a/1778247/149428
-RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
-RUN apt-get install -y nodejs
-RUN node -e "console.log('hello node ' + process.version)"
-RUN npm install -g cryptobject minimist
-RUN npm install -g eslint eslint-config-google
-ADD blackmagic blackmagic
 ENV NODE_PATH=/usr/lib/node_modules/
-RUN cd blackmagic/ \
+ADD blackmagic blackmagic
+RUN curl -sL https://deb.nodesource.com/setup_6.x | bash - \
+    && apt-get install -y nodejs \
+    && node -e "console.log('hello node ' + process.version)" \
+    && npm install -g cryptobject minimist \
+    && npm install -g eslint eslint-config-google \
+    && cd blackmagic/ \
     && cd py/ \
     && pip install -r requirements_dev.txt \
     && ./run_example.sh

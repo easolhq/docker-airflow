@@ -48,19 +48,21 @@ RUN set -ex \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
     && pip install -r requirements.txt
 
+# Set airflow home.
+ADD airflow_home ${AIRFLOW_HOME}/
+
 # setup blackmagic
 # TODO: pin node at 6.11.1
 # TODO: discuss possibly pulling blackmagic as a git submodule instead pinned
 # to tag v1.latest (master branch for now) - https://stackoverflow.com/a/1778247/149428
-ENV NODE_PATH=/usr/lib/node_modules/
-ADD blackmagic blackmagic
+ENV NODE_PATH /usr/lib/node_modules/
+ENV BLACKMAGIC_HOME ${AIRFLOW_HOME}/blackmagic
+ADD blackmagic ${BLACKMAGIC_HOME}/
 RUN curl -sL https://deb.nodesource.com/setup_6.x | bash - \
     && apt-get install -y nodejs \
     && npm install -g cryptobject minimist \
     && npm install -g eslint eslint-config-google \
-    && cd blackmagic/ \
-    && cd py/ \
-    && pip install -r requirements_dev.txt
+    && pip install -r ${BLACKMAGIC_HOME}/py/requirements_dev.txt
 
 RUN set -ex \
     && apt-get remove --purge -yqq $buildDeps libpq-dev \
@@ -74,13 +76,10 @@ RUN set -ex \
         /usr/share/doc-base
 
 # Set python path so airflow can find pip installed packages.
-ENV PYTHONPATH=${PYTHONPATH}:${AIRFLOW_HOME}
+ENV PYTHONPATH ${PYTHONPATH}:${AIRFLOW_HOME}
 
 # Add scripts.
 ADD script script
-
-# Set airflow home.
-ADD airflow_home ${AIRFLOW_HOME}/
 
 EXPOSE 8080 5555 8793
 WORKDIR ${AIRFLOW_HOME}

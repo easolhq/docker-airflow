@@ -136,13 +136,17 @@ def create_linked_docker_operator(
     execution_timeout = timedelta(minutes=timeout) if timeout is not None else None
 
     # Pass some env vars through.
+    # TODO: add ability to pass env vars down from the top and merge with some
+    # defaults here
     env = {
         'AWS_ACCESS_KEY_ID': os.getenv('AWS_ACCESS_KEY_ID', ''),
         'AWS_SECRET_ACCESS_KEY': os.getenv('AWS_SECRET_ACCESS_KEY', ''),
         'AWS_REGION': os.getenv('AWS_REGION', ''),
         'AWS_S3_TEMP_BUCKET': os.getenv('AWS_S3_TEMP_BUCKET', ''),
         'ARIES_REMOVE_FILES_AFTER_TASK': 'TRUE',
-        'AWS_S3_CLICKSTREAM_BUCKET': os.getenv('AWS_S3_CLICKSTREAM_BUCKET', '')
+        'AWS_S3_CLICKSTREAM_BUCKET': os.getenv('AWS_S3_CLICKSTREAM_BUCKET', ''),
+        'SENTRY_ENABLED': os.getenv('SENTRY_ENABLED', True),
+        'SENTRY_DSN': os.getenv('SENTRY_DSN'),
     }
 
     if force_pull is None:

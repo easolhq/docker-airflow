@@ -56,13 +56,11 @@ ENV NODE_PATH=/usr/lib/node_modules/
 ADD blackmagic blackmagic
 RUN curl -sL https://deb.nodesource.com/setup_6.x | bash - \
     && apt-get install -y nodejs \
-    && node -e "console.log('hello node ' + process.version)" \
     && npm install -g cryptobject minimist \
     && npm install -g eslint eslint-config-google \
     && cd blackmagic/ \
     && cd py/ \
-    && pip install -r requirements_dev.txt \
-    && ./run_example.sh
+    && pip install -r requirements_dev.txt
 
 RUN set -ex \
     && apt-get remove --purge -yqq $buildDeps libpq-dev \

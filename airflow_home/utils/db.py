@@ -4,14 +4,10 @@ import ssl
 
 
 class MongoClient:
-    """
-    MongoDB connection wrapper.
-    """
+    """MongoDB connection wrapper."""
 
     def __init__(self):
-        """
-        Initialize Mongo and store default database.
-        """
+        """Initialize Mongo and store default database."""
         # Get mongo url.
         mongo_url = os.getenv('MONGO_URL', '')
 
@@ -22,9 +18,7 @@ class MongoClient:
         self.pipeline = self._build_pipeline()
 
     def _build_pipeline(self):
-        """
-        Build an aggregation pipeline that populates connections and VPN connections.
-        """
+        """Build an aggregation pipeline that populates connections and VPN connections."""
         pipeline = [
             # stage 1: unwind all activities
             {
@@ -146,27 +140,19 @@ class MongoClient:
         return pipeline
 
     def workflow_configs(self):
-        """
-        Fetch config objects for Cloud DAGs.
-        """
+        """Fetch config objects for Cloud DAGs."""
         return self.db.workflows.aggregate(self.pipeline)
 
     def webhook_configs(self):
-        """
-        Fetch config objects for webhook DAGs.
-        """
+        """Fetch config objects for webhook DAGs."""
         return self.db.webhookConfigs.aggregate(self.pipeline)
 
     def ftp_configs(self):
-        """
-        Fetch config objects for FTP DAGs.
-        """
+        """Fetch config objects for FTP DAGs."""
         return self.db.ftpConfigs.aggregate(self.pipeline)
 
     def clickstream_configs(self):
-        """
-        Fetch config objects for Clickstream DAGs.
-        """
+        """Fetch config objects for Clickstream DAGs."""
         # integration_configs = self.db.integrationConfigs.find({
         #     'integration': 'amazon-redshift',
         #     'config.tables': {
@@ -221,7 +207,5 @@ class MongoClient:
 
 
     def close(self):
-        """
-        Close Mongo client.
-        """
+        """Close Mongo client."""
         self.client.close()

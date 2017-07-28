@@ -46,7 +46,25 @@ RUN set -ex \
     && sed -i 's/^# en_US.UTF-8 UTF-8$/en_US.UTF-8 UTF-8/g' /etc/locale.gen \
     && locale-gen \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
-    && pip install -r requirements.txt \
+    && pip install -r requirements.txt
+
+# setup blackmagic
+# TODO: pin node at 6.11.1
+# TODO: discuss possibly pulling blackmagic as a git submodule instead pinned
+# to tag v1.latest (master branch for now) - https://stackoverflow.com/a/1778247/149428
+RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
+RUN apt-get install -y nodejs
+RUN node -e "console.log('hello node ' + process.version)"
+RUN npm install -g cryptobject minimist
+RUN npm install -g eslint eslint-config-google
+ADD blackmagic blackmagic
+ENV NODE_PATH=/usr/lib/node_modules/
+RUN cd blackmagic/ \
+    && cd py/ \
+    && pip install -r requirements_dev.txt \
+    && ./run_example.sh
+
+RUN set -ex \
     && apt-get remove --purge -yqq $buildDeps libpq-dev \
     && apt-get clean \
     && rm -rf \

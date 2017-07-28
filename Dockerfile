@@ -46,10 +46,11 @@ RUN set -ex \
     && sed -i 's/^# en_US.UTF-8 UTF-8$/en_US.UTF-8 UTF-8/g' /etc/locale.gen \
     && locale-gen \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
-    && pip install -r requirements.txt
-
-# Set airflow home.
-ADD airflow_home ${AIRFLOW_HOME}/
+    && pip install -r requirements.txt \
+    && curl -sL https://deb.nodesource.com/setup_6.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g cryptobject minimist \
+    && npm install -g eslint eslint-config-google
 
 # setup blackmagic
 # TODO: pin node at 6.11.1
@@ -58,11 +59,7 @@ ADD airflow_home ${AIRFLOW_HOME}/
 ENV NODE_PATH /usr/lib/node_modules/
 ENV BLACKMAGIC_HOME ${AIRFLOW_HOME}/blackmagic
 ADD blackmagic ${BLACKMAGIC_HOME}/
-RUN curl -sL https://deb.nodesource.com/setup_6.x | bash - \
-    && apt-get install -y nodejs \
-    && npm install -g cryptobject minimist \
-    && npm install -g eslint eslint-config-google \
-    && pip install -r ${BLACKMAGIC_HOME}/py/requirements_dev.txt
+RUN pip install -r ${BLACKMAGIC_HOME}/py/requirements_dev.txt
 
 RUN set -ex \
     && apt-get remove --purge -yqq $buildDeps libpq-dev \
@@ -77,6 +74,9 @@ RUN set -ex \
 
 # Set python path so airflow can find pip installed packages.
 ENV PYTHONPATH ${PYTHONPATH}:${AIRFLOW_HOME}
+
+# Set airflow home.
+ADD airflow_home ${AIRFLOW_HOME}/
 
 # Add scripts.
 ADD script script

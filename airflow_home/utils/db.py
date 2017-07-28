@@ -213,7 +213,7 @@ class MongoClient:
             # }},
 
         ]
-        items = db.clickstreamConfigs.aggregate(pipeline)
+        items = self.db.clickstreamConfigs.aggregate(pipeline)
         # list(items).__len__()
         # x = list(items)
         # pprint(x)

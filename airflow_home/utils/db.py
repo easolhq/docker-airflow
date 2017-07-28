@@ -177,7 +177,7 @@ class MongoClient:
         pipeline = [
             {'$match': {
                 'code': 'amazon-redshift',
-                # 'enabled': True,  # TODO: uncomment when done testing
+                'enabled': True,
             }},
 
             {'$lookup': {

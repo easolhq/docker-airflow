@@ -14,6 +14,7 @@ from airflow.utils.db import provide_session
 from airflow.operators import S3ClickstreamKeySensor
 from airflow.operators.dummy_operator import DummyOperator
 
+from blackmagic.py import blackmagic
 # from fn.func import F
 
 from utils.config import ClickstreamActivity
@@ -60,8 +61,9 @@ class ClickstreamEvents(object):
     def __init__(self, workflow, dag, upstream_task):
         """Initialize the clickstream config params and built-in event types."""
         self.workflow = workflow
-        self.app_id = workflow['appId']
+        self.app_id = workflow['application']
         self.config = workflow['config']
+        self.connection = workflow['connection']
         self.dag = dag
         self.upstream_task = upstream_task
         self._standard_events = ['page', 'track', 'identify', 'group', 'screen', 'alias']
@@ -70,7 +72,8 @@ class ClickstreamEvents(object):
     def workflow_id(self):
         """Get the clickstream config workflow ID."""
         # return self.workflow['_id']
-        return self.workflow['appId']
+        # return self.workflow['appId']
+        return self.app_id
 
     @property
     def standard_events(self):
@@ -122,15 +125,33 @@ class ClickstreamEvents(object):
 
     def create_copy_operator(self, table):
         """Create the copy task."""
+        details = self.workflow['connection'][0]['details']
+        if details['_encrypted'] is True:
+            PASSPHRASE = os.environ['PASSPHRASE']
+            print('* decrypting redshift config')
+            decrypted = blackmagic.decrypt(passphrase=PASSPHRASE, obj=details)
+            print('decrypted =', decrypted)
+            details = decrypted
+            # TODO: copy each key back into obj?
+        else:
+            print('* NOT decrypting redshift config')
+
+        host = details['host']
+        port = details['port']
+        user = details['user']
+        pw = details['pw']
+        db = self.workflow['config']['db']
+        encrypted = details['_encrypted']
+
         activity = ClickstreamActivity(
             workflow_id=self.workflow_id,
             table_name=table,
-            redshift_host=self.config.get('host'),
-            redshift_port=self.config.get('port'),
-            redshift_db=self.config.get('db'),
-            redshift_user=self.config.get('user'),
-            redshift_password=self.config.get('pw'),
-            redshift_encrypted=self.config.get('_encrypted'),
+            redshift_host=host,
+            redshift_port=port,
+            redshift_db=db,
+            redshift_user=user,
+            redshift_password=pw,
+            redshift_encrypted=encrypted,
             temp_bucket=S3_BUCKET,
             name_ver=BATCH_PROCESSING_IMAGE,
             # name=BATCH_PROCESSING_IMAGE,

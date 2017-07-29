@@ -1,5 +1,5 @@
 """
-TODO
+AWS S3 utils.
 """
 
 import os
@@ -14,17 +14,12 @@ def setenv(key, value):
 
 
 def build_s3_url(aws_key, aws_secret):
-    """
-    TODO
-    """
+    """Build S3 protocol connection URL."""
     return 's3://{key}:{secret}@S3'.format(key=aws_key, secret=aws_secret)
 
 
 def config_s3_new(aws_key, aws_secret):
-    """
-    Configure S3 directly from args (as opposed to environment variables
-    behind the scenes).
-    """
+    """Configure S3_CONNECTION env var explicitly from args."""
     aws_secret = quote_plus(aws_secret)
     s3_url_key = CONN_ENV_PREFIX + 'S3_CONNECTION'
     s3_url = build_s3_url(aws_key, aws_secret)

@@ -5,10 +5,22 @@ Redshift / Clickstream DAG utils.
 import boa
 
 
+def get_name(workflow):
+    return workflow.get('name', 'astronomer_clickstream_to_redshift')
+
+
+def func_reduce(*funcs, initial=None):
+    """Reduce a chain of nested function calls.
+    
+    foo(bar(baz(initial))) --> reducec(initial, foo, bar, baz)
+    """
+    pass  # TODO: implement with reduce()
+
+
 def build_dag_id(workflow):
     """Build dag_id for Clickstream DAGs."""
-    workflow_id = workflow['_id']
-    workflow_name = workflow.get('name', 'astronomer_clickstream_to_redshift')
-    workflow_name = boa.constrict(workflow_name.lower())
-    dag_id = '{name}__etl__{id}'.format(id=workflow_id, name=workflow_name)
-    return dag_id
+    return '{name}__etl__{id}'.format(
+        id=workflow['_id'],
+        name=func_reduce(get_name(workflow),
+                         str.lower,
+                         boa.constrict))

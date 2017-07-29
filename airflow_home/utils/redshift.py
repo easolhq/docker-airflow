@@ -1,14 +1,12 @@
 """
-TODO
+Redshift / Clickstream DAG utils.
 """
 
 import boa
 
 
 def build_dag_id(workflow):
-    """
-    TODO
-    """
+    """Build dag_id for Clickstream DAGs."""
     workflow_id = workflow['_id']
     workflow_name = workflow.get('name', 'astronomer_clickstream_to_redshift')
     workflow_name = boa.constrict(workflow_name.lower())

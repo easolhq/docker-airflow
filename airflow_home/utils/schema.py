@@ -1,5 +1,5 @@
 """
-TODO
+For future very explicit config schemas.
 """
 
 import datetime

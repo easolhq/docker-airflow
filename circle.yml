@@ -12,7 +12,7 @@ dependencies:
 
 test:
   override: 
-    - make lint-ci
+    # - make lint-ci
     - make test-ci
 
 deployment:

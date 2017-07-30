@@ -1,5 +1,5 @@
 """
-TODO
+DockerOperator wrappers and utils.
 """
 
 import ast
@@ -12,13 +12,13 @@ from airflow.operators.docker_operator import DockerOperator
 from utils.flatten import flatten_config
 
 
-# Trim aries-activity- off.
 def trim_activity_name(name):
+    """Trim 'aries-activity-' off."""
     return name[15:]
 
 
-# formats a task name for use as an airflow task id
 def format_task_name(name):
+    """Format a task name for use as an Airflow task ID."""
     if name.startswith('aries-activity'):
         # TODO: legacy naming convention. remove once migrated
         return trim_activity_name(name)
@@ -27,8 +27,8 @@ def format_task_name(name):
     return name
 
 
-# formats an image name
 def format_image_name(name, version):
+    """Build Docker image name string."""
     # TODO: legacy naming convention. remove once migrated
     if name.startswith('aries-activity'):
         return 'astronomerio/{name}'.format(name=trim_activity_name(name))
@@ -36,6 +36,7 @@ def format_image_name(name, version):
 
 
 def create_docker_operator(params):
+    """Create DockerOperator with default kwargs."""
     # Create defaults.
     defaults = {
         'remove': True,
@@ -82,8 +83,8 @@ def create_linked_docker_operator(
         pool=None,
         resources=None):
     """
-    Creates a DockerOperator from the activity in activity_tuple,
-    configured to pull Xcoms from the previous task
+    Create DockerOperator for an activity that pulls XComs.
+
     :param: activity_list: The full activity list for the workflow
     :type: activity_list: list
     :param initial_task_id: The id of the initial task

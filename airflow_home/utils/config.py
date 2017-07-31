@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class ClickstreamActivity(object):
     """Config for clickstream event classes."""
 
-    def __init__(self, workflow_id, table_name, redshift_host, redshift_port, redshift_db, redshift_user,
+    def __init__(self, workflow_id, table_name, redshift_host, redshift_port, redshift_db, redshift_schema, redshift_user,
                  redshift_password, redshift_encrypted, temp_bucket, name_ver):
         """Initialize clickstream event params."""
         self.workflow_id = workflow_id
@@ -19,6 +19,7 @@ class ClickstreamActivity(object):
         self.redshift_host = redshift_host
         self.redshift_port = redshift_port
         self.redshift_db = redshift_db
+        self.redshift_schema = redshift_schema
         self.redshift_user = redshift_user
         self.redshift_password = redshift_password
         self.redshift_encrypted = redshift_encrypted
@@ -36,6 +37,7 @@ class ClickstreamActivity(object):
             'redshift_host',
             'redshift_port',
             'redshift_db',
+            'redshift_schema',
             'redshift_user',
             'redshift_password',
             'redshift_encrypted',
@@ -45,10 +47,6 @@ class ClickstreamActivity(object):
         ]
         required_params_vals = [getattr(self, i) for i in required_params_strs]
         self.required_params = dict(zip(required_params_strs, required_params_vals))
-
-    @property
-    def redshift_schema(self):
-        return self.workflow_id
 
     @property
     def task_id(self):

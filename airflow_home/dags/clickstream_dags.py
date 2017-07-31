@@ -141,7 +141,7 @@ class ClickstreamEvents(object):
         user = details['user']
         pw = details['pw']
         db = self.workflow['config']['db']
-        schema = self.workflow['config']['schema'] # TODO: this correct?
+        schema = self.workflow['config']['schema']
         encrypted = details['_encrypted']
 
         activity = ClickstreamActivity(

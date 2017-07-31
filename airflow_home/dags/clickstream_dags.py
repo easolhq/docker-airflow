@@ -141,6 +141,7 @@ class ClickstreamEvents(object):
         user = details['user']
         pw = details['pw']
         db = self.workflow['config']['db']
+        schema = self.workflow['config']['schema'] # TODO: this correct?
         encrypted = details['_encrypted']
 
         activity = ClickstreamActivity(
@@ -149,6 +150,7 @@ class ClickstreamEvents(object):
             redshift_host=host,
             redshift_port=port,
             redshift_db=db,
+            redshift_schema=schema,
             redshift_user=user,
             redshift_password=pw,
             redshift_encrypted=encrypted,

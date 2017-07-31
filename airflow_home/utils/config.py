@@ -75,7 +75,6 @@ class ClickstreamActivity(object):
                     'host': self.redshift_host,
                     'port': self.redshift_port,
                     'db': self.redshift_db,
-                    'schema': self.redshift_schema,
                     'user': self.redshift_user,
                     'password': self.redshift_password,
                     '_encrypted': self.redshift_encrypted,

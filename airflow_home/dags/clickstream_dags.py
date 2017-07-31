@@ -128,13 +128,12 @@ class ClickstreamEvents(object):
         details = self.workflow['connection'][0]['details']
         if details['_encrypted'] is True:
             PASSPHRASE = os.environ['PASSPHRASE']
-            print('* decrypting redshift config')
+            logger.info('* decrypting redshift config')
             decrypted = blackmagic.decrypt(passphrase=PASSPHRASE, obj=details)
-            print('decrypted =', decrypted)
             details = decrypted
             # TODO: copy each key back into obj?
         else:
-            print('* NOT decrypting redshift config')
+            logger.info('* NOT decrypting redshift config')
 
         host = details['host']
         port = details['port']

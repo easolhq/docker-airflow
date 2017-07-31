@@ -126,6 +126,7 @@ class ClickstreamEvents(object):
     def create_copy_operator(self, table):
         """Create the copy task."""
         details = self.workflow['connection'][0]['details']
+        # TODO: encrypt this once instead for every copy operator
         if details['_encrypted'] is True:
             PASSPHRASE = os.environ['PASSPHRASE']
             logger.info('* decrypting redshift config')

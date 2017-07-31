@@ -41,7 +41,7 @@ else:
     logger.warn("Not attaching sentry to clickstream dags because sentry is disabled")
 
 S3_BUCKET = os.getenv('AWS_S3_CLICKSTREAM_BUCKET', default='astronomer-clickstream')
-BATCH_PROCESSING_IMAGE = os.getenv('CLICKSTREAM_BATCH_IMAGE', default='astronomerio/py-aries-clickstream')
+BATCH_PROCESSING_IMAGE = os.getenv('CLICKSTREAM_BATCH_IMAGE')
 AWS_KEY = os.getenv('AWS_ACCESS_KEY_ID', '')
 AWS_SECRET = os.getenv('AWS_SECRET_ACCESS_KEY', '')
 config_s3_new(AWS_KEY, AWS_SECRET)

@@ -145,7 +145,8 @@ def create_linked_docker_operator(
         'AWS_REGION': os.getenv('AWS_REGION', ''),
         'AWS_S3_TEMP_BUCKET': os.getenv('AWS_S3_TEMP_BUCKET', ''),
         'ARIES_REMOVE_FILES_AFTER_TASK': 'TRUE',
-        'AWS_S3_CLICKSTREAM_BUCKET': os.getenv('AWS_S3_CLICKSTREAM_BUCKET', ''),
+        # 'AWS_S3_CLICKSTREAM_BUCKET': os.getenv('AWS_S3_CLICKSTREAM_BUCKET', ''),
+        'S3_BUCKET': os.getenv('AWS_S3_CLICKSTREAM_BUCKET', ''),
         'SENTRY_ENABLED': os.getenv('SENTRY_ENABLED', True),
         'SENTRY_DSN': os.getenv('SENTRY_DSN'),
     }

@@ -163,6 +163,10 @@ class MongoClient:
         pipeline = [
             {'$match': {
                 'code': 'amazon-redshift',
+                'config.schema': {'$ne': ''},
+                'config.schema': {'$exists': True},
+                'config.db': {'$ne': ''},
+                'config.db': {'$exists': True},
                 'enabled': True,
             }},
 

@@ -167,6 +167,10 @@ class MongoClient:
                 'config.schema': {'$exists': True},
                 'config.db': {'$ne': ''},
                 'config.db': {'$exists': True},
+                "config.tables": {
+                    '$exists': True,
+                    '$ne': [],
+                },
                 'enabled': True,
             }},
 

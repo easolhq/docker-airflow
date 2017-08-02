@@ -45,6 +45,7 @@ class MongoClient:
                     "schedule": {"$first": "$schedule"},
                     "pokeInterval": {"$first": "$pokeInterval"},
                     "timeout": {"$first": "$timeout"},
+                    "default_args": {"$first": "$default_args"},
                     "organizationId": {"$first": "$organizationId"},
                     "activityList": {"$push": "$activityList"}
                 }
@@ -95,6 +96,7 @@ class MongoClient:
                     "schedule": {"$first": "$schedule"},
                     "pokeInterval": {"$first": "$pokeInterval"},
                     "timeout": {"$first": "$timeout"},
+                    "default_args": {"$first": "$default_args"},
                     "organizationId": {"$first": "$organizationId"},
                     "activityList": {"$push": "$activityList"}
                 }
@@ -131,6 +133,7 @@ class MongoClient:
                     "schedule": {"$first": "$schedule"},
                     "pokeInterval": {"$first": "$pokeInterval"},
                     "timeout": {"$first": "$timeout"},
+                    "default_args": {"$first": "$default_args"},
                     "organizationId": {"$first": "$organizationId"},
                     "organization": {"$first": "$organization"},
                     "activityList": {"$push": "$activityList"}

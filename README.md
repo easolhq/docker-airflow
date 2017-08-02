@@ -4,6 +4,18 @@
 
 Airflow docker container
 
+## Overriding start_date per DAG
+Inside your workflow document, define `workflow.default_args` like so:
+```javascript
+{
+    "name": "my_dag",
+    "activityList": [],
+    "default_args": {
+        "start_date": ISODate("2017-08-01T00:00:00.000+0000")
+    }
+}
+```
+
 ## Clickstream DAGs
 Clickstream DAGs are dynamically generated using information from the `clickstreamData` Mongo collection:
 - one DAG is generated for each record in the collection, corresponding to a separate app

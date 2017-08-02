@@ -42,7 +42,7 @@ def create_tasks(dag, workflow):
             current.set_upstream(tasks[i - 1])
 
 
-def create_dag(workflow, schedule_interval=None, dag_cls=None, dag_type=None, dag_args=None):
+def create_dag(workflow, schedule_interval=None, dag_cls=None, dag_type=None):
     """
     Creates a DAG instance from a workflow-like dict.
     Workflow objects are expected to have a name, schedule,
@@ -58,9 +58,10 @@ def create_dag(workflow, schedule_interval=None, dag_cls=None, dag_type=None, da
     """
     if not dag_cls:
         raise Exception('must pass DAG class to create_dag')
-# TODO: Improve this
-    if isinstance(dag_args, dict):
-        args = {**default_args, **dag_args}
+    # override default_args in workflow.default_args e.g. start_date
+    workflow_args = workflow.get('default_args')
+    if isinstance(workflow_args, dict):
+        args = {**default_args, **workflow_args}
     else:
         args = default_args
     id_ = workflow.get('_id')

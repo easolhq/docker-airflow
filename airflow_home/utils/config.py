@@ -51,7 +51,7 @@ class ClickstreamActivity(object):
     @property
     def task_id(self):
         """Get clickstream task id."""
-        return 's3_clickstream_table_copy_{}'.format(self.table_name)
+        return 'redshift_copy_{}'.format(self.table_name)
 
     def is_valid(self):
         # TODO: handle if values are empty strings

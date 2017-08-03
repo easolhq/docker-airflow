@@ -107,7 +107,7 @@ class ClickstreamEvents(object):
     def create_key_sensor(self, table):
         """Create the S3 key sensor."""
         sensor = S3ClickstreamKeySensor(
-            task_id='s3_clickstream_table_sensor_{}'.format(table),
+            task_id='s3_sensor_{}'.format(table),
             default_args=default_args,
             dag=self.dag,
             bucket_name=S3_BUCKET,

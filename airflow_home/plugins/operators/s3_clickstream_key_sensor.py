@@ -63,9 +63,15 @@ class S3ClickstreamKeySensor(BaseSensorOperator):
         logging.info('Starting poke')
         hook = S3FileHook(s3_conn_id='S3_CONNECTION')
         full_url = self._build_url(context=context)
-        file_found = hook.check_for_wildcard_key(wildcard_key=full_url, delimiter='/')
+        bucket, key_matches = hook.get_wildcard_keys(full_url)
+
+        # TODO: do we want to get super specific for which loader created the success file?
+        # TODO: Should we actually name the file `_SUCCESS__redshift` or something?
+        if '_SUCCESS' in key_matches:
+            logging.warn('Files found, but _SUCCESS file is present')
+            return False
 
         if not file_found:
-            logging.warning('No file found at "{}"'.format(full_url))
+            logging.warn('No file found at "{}"'.format(full_url))
 
         return file_found

@@ -42,7 +42,7 @@ RUN set -ex \
         netcat \
         locales \
         dnsutils \
-    && apt-get install -yqq -t jessie-backports python-requests cython libpq-dev \
+    && apt-get install -yqq -t jessie-backports cython libpq-dev \
     && sed -i 's/^# en_US.UTF-8 UTF-8$/en_US.UTF-8 UTF-8/g' /etc/locale.gen \
     && locale-gen \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \

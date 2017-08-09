@@ -15,7 +15,7 @@ from airflow.operators import (
 
 from utils.paths import ensure_trailing_slash
 from utils.db import MongoClient
-from utils.create_dag import create_dag
+from utils.create_dag import create_dag, resources_for_workflow
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -54,6 +54,7 @@ for ftp_config in ftp_configs:
 
     file_dir, file_ext = os.path.splitext(path)
 
+    resources = resources_for_workflow(ftp_config)
     # probe for file presence
     if file_ext == '':
         # wildcard paths (directories)
@@ -64,6 +65,7 @@ for ftp_config in ftp_configs:
             bucket_key=path,
             soft_fail=True,
             poke_interval=poke_interval,
+            resources=resources,
             timeout=timeout,
             dag=dag,
         )
@@ -75,6 +77,7 @@ for ftp_config in ftp_configs:
             bucket_key=path,
             soft_fail=True,
             poke_interval=poke_interval,
+            resources=resources,
             timeout=timeout,
             dag=dag,
         )
@@ -85,6 +88,7 @@ for ftp_config in ftp_configs:
         bucket_key=path,
         xcom_push=True,
         task_id='s3_ftp_config_get_key',
+        resources=resources,
         dag=dag,
     )
     task_2_s3_get.set_upstream(task_1_s3_sensor)

@@ -14,7 +14,7 @@ function lookupCommandFunc(name) {
   } else if (name === 'decrypt') {
     func = cryptobject.decrypt;
   } else {
-    console.log('ERROR: command "' + name + '" not found');
+    process.stdout.write('ERROR: command "' + name + '" not found');
     process.exit(1);
   }
   return func;
@@ -35,10 +35,10 @@ function apply() {
   try {
     const func = lookupCommandFunc(argv.command);
     const rv = func(argv.passphrase, JSON.parse(argv.obj));
-    console.log(JSON.stringify(rv));
     setTimeout(process.exit.bind(process, 0), 1000);
+    process.stdout.write(JSON.stringify(rv));
   } catch (e) {
-    console.log('ERROR: "' + e + '"');
+    process.stdout.write('ERROR: "' + e + '"');
     // console.log(JSON.stringify({}));
     setTimeout(process.exit.bind(process, 1), 1000);
 

@@ -87,8 +87,31 @@ class ClickstreamEvents(object):
     def event_group_name(self):
         raise NotImplementedError
 
+    def decrypt_connection(self):
+        self.details = self.workflow['connection'][0]['details']
+        if self.details['_encrypted'] is True:
+            PASSPHRASE = config('PASSPHRASE')
+            logger.info('* decrypting redshift config')
+
+            try:
+                print('PASSPHRASE =', PASSPHRASE)
+                decrypted = blackmagic.decrypt(passphrase=PASSPHRASE, obj=self.details)
+            except Exception as e:
+                logger.error('* blackmagic decrypt raised exception', e)
+                raise
+
+            if not decrypted:
+                logger.error('* blackmagic decrypt failed')
+                raise Exception('cannot create copy operator without decrypted credentials')
+            else:
+                self.details = decrypted
+            # TODO: copy each key back into obj?
+        else:
+            logger.info('* NOT decrypting redshift config')
+
     def _create_events_branch(self, task_id):
         """Create the DAG branch with sensor and operator (to be called by each subclass)."""
+        self.decrypt_connection()
         tables = self.get_events()
         tables_op = DummyOperator(task_id=task_id, dag=self.dag, resources=dict(organizationId='astronomer'))
         tables_op.set_upstream(self.upstream_task)
@@ -123,26 +146,7 @@ class ClickstreamEvents(object):
 
     def create_copy_operator(self, table):
         """Create the copy task."""
-        details = self.workflow['connection'][0]['details']
-        # TODO: encrypt this once instead for every copy operator
-        if details['_encrypted'] is True:
-            PASSPHRASE = config('PASSPHRASE')
-            logger.info('* decrypting redshift config')
-
-            try:
-                decrypted = blackmagic.decrypt(passphrase=PASSPHRASE, obj=details)
-            except Exception as e:
-                logger.error('* blackmagic decrypt raised exception', e)
-                raise
-
-            if not decrypted:
-                logger.error('* blackmagic decrypt failed')
-                raise Exception('cannot create copy operator without decrypted credentials')
-            else:
-                details = decrypted
-            # TODO: copy each key back into obj?
-        else:
-            logger.info('* NOT decrypting redshift config')
+        details = self.details
 
         host = details['host']
         port = details['port']

@@ -32,14 +32,16 @@ function lookupCommandFunc(name) {
  * 3: https://github.com/nodejs/node-v0.x-archive/issues/3211
  */
 function apply() {
-  const func = lookupCommandFunc(argv.command);
-  const rv = func(argv.passphrase, JSON.parse(argv.obj));
   try {
+    const func = lookupCommandFunc(argv.command);
+    const rv = func(argv.passphrase, JSON.parse(argv.obj));
     console.log(JSON.stringify(rv));
     setTimeout(process.exit.bind(process, 0), 1000);
   } catch (e) {
-    console.log(JSON.stringify({}));
+    console.log('ERROR: "' + e + '"');
+    // console.log(JSON.stringify({}));
     setTimeout(process.exit.bind(process, 1), 1000);
+
   }
 }
 

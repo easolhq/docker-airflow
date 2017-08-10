@@ -35,13 +35,14 @@ function apply() {
   try {
     const func = lookupCommandFunc(argv.command);
     const rv = func(argv.passphrase, JSON.parse(argv.obj));
-    setTimeout(process.exit.bind(process, 0), 1000);
     process.stdout.write(JSON.stringify(rv));
+    // setTimeout(process.exit.bind(process, 0), 5000);
+    process.exit(0);
   } catch (e) {
     process.stdout.write('ERROR: "' + e + '"');
     // console.log(JSON.stringify({}));
-    setTimeout(process.exit.bind(process, 1), 1000);
-
+    // setTimeout(process.exit.bind(process, 1), 5000);
+    process.exit(1);
   }
 }
 

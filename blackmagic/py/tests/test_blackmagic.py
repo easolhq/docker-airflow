@@ -26,11 +26,11 @@ def test_build_node_cmd():
         passphrase='foo',
         obj='{"k2": "v2", "k1": "v1"}',
     )
-    expected = (
-        'node ../js/blackmagic.js --command=\'encrypt\' --passphrase=\'foo\' '
-        '--obj=\'{"k2": "v2", "k1": "v1"}\''
-    )
-    assert actual == expected
+    assert actual.startswith('node')
+    assert 'blackmagic.js' in actual
+    assert '--command=\'encrypt\'' in actual
+    assert '--passphrase=\'foo\'' in actual
+    assert '--obj=\'{"k2": "v2", "k1": "v1"}\'' in actual
 
 
 def test_to_json():
@@ -38,8 +38,10 @@ def test_to_json():
         'k1': 'v1',
         'k2': 'v2',
     })
-    expected = '{"k2": "v2", "k1": "v1"}'
-    assert actual == expected
+    assert actual.startswith('{')
+    assert actual.endswith('}')
+    assert '"k1": "v1"' in actual
+    assert '"k2": "v2"' in actual
 
 
 def test_parse_json():

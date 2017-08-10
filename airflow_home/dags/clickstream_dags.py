@@ -130,8 +130,18 @@ class ClickstreamEvents(object):
         if details['_encrypted'] is True:
             PASSPHRASE = config('PASSPHRASE')
             logger.info('* decrypting redshift config')
-            decrypted = blackmagic.decrypt(passphrase=PASSPHRASE, obj=details)
-            details = decrypted
+
+            try:
+                decrypted = blackmagic.decrypt(passphrase=PASSPHRASE, obj=details)
+            except Exception as e:
+                logger.error('* blackmagic decrypt raised exception', e)
+                raise
+
+            if not decrypted:
+                logger.error('* blackmagic decrypt failed')
+                raise Exception('cannot create copy operator without decrypted credentials')
+            else:
+                details = decrypted
             # TODO: copy each key back into obj?
         else:
             logger.info('* NOT decrypting redshift config')

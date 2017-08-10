@@ -40,13 +40,13 @@ if SENTRY_ENABLED:
 else:
     logger.warn("Not attaching sentry to clickstream dags because sentry is disabled")
 
-S3_BUCKET = os.getenv('AWS_S3_CLICKSTREAM_BUCKET')
-BATCH_PROCESSING_IMAGE = os.getenv('CLICKSTREAM_BATCH_IMAGE')
-AWS_KEY = os.getenv('AWS_ACCESS_KEY_ID', '')
-AWS_SECRET = os.getenv('AWS_SECRET_ACCESS_KEY', '')
+S3_BUCKET = config('AWS_S3_CLICKSTREAM_BUCKET')
+BATCH_PROCESSING_IMAGE = config('CLICKSTREAM_BATCH_IMAGE')
+AWS_KEY = config('AWS_ACCESS_KEY_ID')
+AWS_SECRET = config('AWS_SECRET_ACCESS_KEY')
 config_s3_new(AWS_KEY, AWS_SECRET)
 
-AIRFLOW_CLICKSTREAM_BATCH_POOL = os.getenv('AIRFLOW_CLICKSTREAM_BATCH_POOL')
+AIRFLOW_CLICKSTREAM_BATCH_POOL = config('AIRFLOW_CLICKSTREAM_BATCH_POOL')
 
 default_args = config_default_args()
 
@@ -128,7 +128,7 @@ class ClickstreamEvents(object):
         details = self.workflow['connection'][0]['details']
         # TODO: encrypt this once instead for every copy operator
         if details['_encrypted'] is True:
-            PASSPHRASE = os.environ['PASSPHRASE']
+            PASSPHRASE = config('PASSPHRASE')
             logger.info('* decrypting redshift config')
             decrypted = blackmagic.decrypt(passphrase=PASSPHRASE, obj=details)
             details = decrypted

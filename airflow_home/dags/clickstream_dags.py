@@ -46,8 +46,6 @@ AWS_KEY = config('AWS_ACCESS_KEY_ID')
 AWS_SECRET = config('AWS_SECRET_ACCESS_KEY')
 config_s3_new(AWS_KEY, AWS_SECRET)
 
-AIRFLOW_CLICKSTREAM_BATCH_POOL = config('AIRFLOW_CLICKSTREAM_BATCH_POOL')
-
 default_args = config_default_args()
 
 # TODO: Update Name and Version to check for exsitance and defalut to ''

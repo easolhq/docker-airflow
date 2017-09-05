@@ -1,6 +1,11 @@
+import logging
 import os
-import pymongo
 import ssl
+
+import pymongo
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class MongoClient:
@@ -9,11 +14,21 @@ class MongoClient:
     def __init__(self):
         """Initialize Mongo and store default database."""
         # Get mongo url.
+        logging.info('mongo connection initializing')
         mongo_url = os.getenv('MONGO_URL', '')
+        # print('mongo_url =', mongo_url)
 
-        # Connect to mongo.
-        print('Connecting to mongodb.')
-        self.client = pymongo.MongoClient(mongo_url, ssl_cert_reqs=ssl.CERT_NONE)
+        timeout = 30000  # milliseconds
+
+        self.client = pymongo.MongoClient(
+            mongo_url,
+            ssl_cert_reqs=ssl.CERT_NONE,
+            socketTimeoutMS=timeout,
+            connectTimeoutMS=timeout,
+            serverSelectionTimeoutMS=timeout,
+            waitQueueTimeoutMS=timeout,
+        )
+        logging.info('mongo client created')
         self.db = self.client.get_default_database()
         self.pipeline = self._build_pipeline()
 
@@ -215,12 +230,10 @@ class MongoClient:
 
         ]
         items = self.db.clickstreamConfigs.aggregate(pipeline)
-        # list(items).__len__()
-        # x = list(items)
-        # pprint(x)
         return items
 
 
     def close(self):
         """Close Mongo client."""
+        logging.info('mongo client closed')
         self.client.close()

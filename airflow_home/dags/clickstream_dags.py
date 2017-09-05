@@ -4,27 +4,28 @@ Clickstream content ingestion via S3 bucket wildcard key into Airflow.
 
 # from urllib.parse import quote_plus
 import abc
+import datetime
 import logging
 import os
 from decouple import config
+
+from blackmagic.py import blackmagic
+# from fn.func import F
 
 from airflow import DAG
 from airflow.models import Pool
 from airflow.utils.db import provide_session
 from airflow.operators import S3ClickstreamKeySensor
 from airflow.operators.dummy_operator import DummyOperator
-
-from blackmagic.py import blackmagic
-# from fn.func import F
+from airflow.operators.python_operator import PythonOperator
 
 from utils.config import ClickstreamActivity
-from utils.defaults import config_default_args
 from utils.db import MongoClient
 from utils.docker import create_linked_docker_operator_simple
 from utils.redshift import build_dag_id
 from utils.s3 import config_s3_new
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 SENTRY_ENABLED = config('SENTRY_ENABLED', cast=bool, default=True)
@@ -37,18 +38,33 @@ if SENTRY_ENABLED:
     handler = SentryHandler(SENTRY_DSN)
     handler.setLevel(logging.ERROR)
     setup_logging(handler)
-else:
-    logger.warn("Not attaching sentry to clickstream dags because sentry is disabled")
 
 S3_BUCKET = config('AWS_S3_CLICKSTREAM_BUCKET')
 BATCH_PROCESSING_IMAGE = config('CLICKSTREAM_BATCH_IMAGE')
+
+REDSHIFT_POOL_SLOTS = config('REDSHIFT_POOL_SLOTS', default=5)
+
 AWS_KEY = config('AWS_ACCESS_KEY_ID')
 AWS_SECRET = config('AWS_SECRET_ACCESS_KEY')
 config_s3_new(AWS_KEY, AWS_SECRET)
 
-default_args = config_default_args()
+default_args = {
+    'owner': 'astronomer',
+    'depends_on_past': False,
+    'start_date': datetime.datetime(2017, 9, 5),
+    'email': 'taylor@astronomer.io',
+    'email_on_failure': True,
+    'email_on_retry': False,
 
-# TODO: Update Name and Version to check for exsitance and defalut to ''
+    'retries': 2,
+    # 'retries': 0,  # FIXME: remove right before merge
+
+    'retry_delay': datetime.timedelta(minutes=5),
+    'app_id': None,
+    'copy_table': None
+}
+
+astro_resources = {'organizationId': 'astronomer'}
 
 
 class ClickstreamEvents(object):
@@ -64,6 +80,7 @@ class ClickstreamEvents(object):
         self.connection = workflow['connection']
         self.dag = dag
         self.upstream_task = upstream_task
+        # self.details = details
         self._standard_events = ['page', 'track', 'identify', 'group', 'screen', 'alias']
 
     @property
@@ -88,32 +105,56 @@ class ClickstreamEvents(object):
         raise NotImplementedError
 
     def decrypt_connection(self):
+        """
+        Decrypt the Redshift connection details.
+
+        For some reason [1][2][3][4] and potentially related [5], this method
+        when converted into a function causes sensors to throw an obscure
+        exception if details is passed into it as an arg / kwarg. The error
+        occurs inside boto/connection.py in proxy_ssl and throws "TypeError: a
+        bytes-like object is required, not 'str'." I'm not sure why yet but we
+        should investigate more if it happens again. This is an open issue on
+        boto.
+
+        [1]: https://github.com/boto/boto/issues/3561
+        [2]: https://github.com/boto/boto/pull/3699
+        [3]: https://github.com/boto/boto/pull/2718
+        [4]: https://github.com/boto/boto/pull/3695
+        [5]: https://github.com/boto/boto/issues/2836
+        """
         self.details = self.workflow['connection'][0]['details']
         if self.details['_encrypted'] is True:
             PASSPHRASE = config('PASSPHRASE')
             logger.info('* decrypting redshift config')
 
             try:
-                print('PASSPHRASE =', PASSPHRASE)
-                decrypted = blackmagic.decrypt(passphrase=PASSPHRASE, obj=self.details)
+                decrypted = blackmagic.decrypt(passphrase=PASSPHRASE,
+                                               obj=self.details)
+                # print('PASSPHRASE =', PASSPHRASE)
+                # print('decrypted =', decrypted)
             except Exception as e:
-                logger.error('* blackmagic decrypt raised exception', e)
+                logger.error(f'* blackmagic decrypt raised exception {e}')
                 raise
 
             if not decrypted:
                 logger.error('* blackmagic decrypt failed')
                 raise Exception('cannot create copy operator without decrypted credentials')
             else:
+                logger.info('* blackmagic decrypt succeeded')
                 self.details = decrypted
-            # TODO: copy each key back into obj?
         else:
-            logger.info('* NOT decrypting redshift config')
+            logger.info('* not decrypting redshift config')
 
     def _create_events_branch(self, task_id):
         """Create the DAG branch with sensor and operator (to be called by each subclass)."""
         self.decrypt_connection()
         tables = self.get_events()
-        tables_op = DummyOperator(task_id=task_id, dag=self.dag, resources=dict(organizationId='astronomer'))
+        tables_op = DummyOperator(
+            task_id=task_id,
+            dag=self.dag,
+            priority_weight=10,
+            resources=astro_resources,
+        )
         tables_op.set_upstream(self.upstream_task)
 
         for table in tables:
@@ -128,7 +169,7 @@ class ClickstreamEvents(object):
     def create_key_sensor(self, table):
         """Create the S3 key sensor."""
         sensor = S3ClickstreamKeySensor(
-            task_id='s3_sensor_{}'.format(table),
+            task_id=f's3_sensor_{table}',
             default_args=default_args,
             dag=self.dag,
             bucket_name=S3_BUCKET,
@@ -140,7 +181,8 @@ class ClickstreamEvents(object):
             poke_interval=5,
             timeout=10,
             event_group=self.event_group_name,
-            resources=dict(organizationId='astronomer')
+            priority_weight=10,
+            resources=astro_resources,
         )
         return sensor
 
@@ -178,9 +220,17 @@ class ClickstreamEvents(object):
         copy_task = create_linked_docker_operator_simple(
             dag=self.dag,
             activity=activity.serialize(),
-            force_pull=False,
+
+            # this makes a massive performance difference on mesos
+            # force_pull=False,
+            force_pull=True,
+
             pool=self.workflow['pool'],
-            resources=dict(organizationId='astronomer')
+
+            # TODO: it's a pain to pass this all the way through... maybe fix
+            # priority_weight=10,
+
+            resources=astro_resources,
         )
         return copy_task
 
@@ -234,41 +284,145 @@ class CustomClickstreamEvents(ClickstreamEvents):
         self._create_events_branch(task_id='event_tables')
 
 
+def get_redshift_pool_name(dag_id, slots):
+    return f'redshift_loader_{dag_id}_{slots}'
+
+
 @provide_session
-def main(session=None):
+def ensure_redshift_pool(name, slots, session=None):
+    """
+    Create Redshift connection pool dynamically.
+
+    Currently this is one pool per DAG.
+    """
+    pool = Pool(pool=name, slots=slots)
+    pool_query = (
+        session.query(Pool)
+        .filter(Pool.pool == name, Pool.slots == slots)
+    )
+    pool_query_result = pool_query.one_or_none()
+    if not pool_query_result:
+        logger.info(f'redshift pool "{name}" does not exist - creating it')
+        session.add(pool)
+        session.commit()
+        logger.info(f'created redshift pool "{name}"')
+    else:
+        logger.info(f'redshift pool "{name}" already exists')
+
+
+# def decrypt_connection(
+#     details,
+#     **kwargs,
+# ):
+#     """
+#     Decrypt the Redshift connection details.
+
+#     For some reason [1][2][3][4] and potentially related [5], this method
+#     when converted into a function causes sensors to throw an obscure
+#     exception if details is passed into it as an arg / kwarg. The error
+#     occurs inside boto/connection.py in proxy_ssl and throws "TypeError: a
+#     bytes-like object is required, not 'str'." I'm not sure why yet but we
+#     should investigate more if it happens again. This is an open issue on
+#     boto.
+
+#     [1]: https://github.com/boto/boto/issues/3561
+#     [2]: https://github.com/boto/boto/pull/3699
+#     [3]: https://github.com/boto/boto/pull/2718
+#     [4]: https://github.com/boto/boto/pull/3695
+#     [5]: https://github.com/boto/boto/issues/2836
+#     """
+#     # self.details = self.workflow['connection'][0]['details']
+#     # if self.details['_encrypted'] is True:
+#     if details['_encrypted'] is True:
+#         PASSPHRASE = config('PASSPHRASE')
+#         logger.info('* decrypting redshift config')
+
+#         try:
+#             # decrypted = blackmagic.decrypt(passphrase=PASSPHRASE, obj=self.details)
+#             decrypted = blackmagic.decrypt(passphrase=PASSPHRASE, obj=details)
+#             # print('PASSPHRASE =', PASSPHRASE)
+#             # print('decrypted =', decrypted)
+#         except Exception as e:
+#             logger.error('* blackmagic decrypt raised exception {}'.format(e))
+#             raise
+
+#         if not decrypted:
+#             logger.error('* blackmagic decrypt failed')
+#             raise Exception('cannot create copy operator without decrypted credentials')
+#         else:
+#             logger.info('* blackmagic decrypt succeeded')
+#             details = decrypted
+#     else:
+#         logger.info('* not decrypting redshift config')
+
+#     # print('details =', details)
+
+#     return json.dumps({
+#         'details': details,
+#         'ti': kwargs['task_instance'],
+#     })
+
+
+def main():
     """Create clickstream DAG with branches for clickstream events grouped by type."""
     global default_args
 
     client = MongoClient()
     workflows = client.clickstream_configs()
+    client.close()
 
     for workflow in workflows:
         default_args['app_id'] = workflow['_id']
-        pool_name = "redshift_loader_{}_{}".format(workflow['_id'], 5)
+
+        pool_name = get_redshift_pool_name(
+            dag_id=workflow['_id'],
+            slots=REDSHIFT_POOL_SLOTS,
+        )
         workflow['pool'] = pool_name
 
-        # TODO: flip back to old schedule when done testing - 15 * * * *
-        dag = DAG(dag_id=build_dag_id(workflow), default_args=default_args, schedule_interval='15 * * * *', catchup=False)
+        dag = DAG(
+            dag_id=build_dag_id(workflow),
+            default_args=default_args,
+            schedule_interval='15 * * * *',
+            # catchup=False,  # TODO: should i make this true (and adjust start date for prod?)
+            catchup=True,
+        )
         globals()[workflow['_id']] = dag
 
-        start = DummyOperator(task_id='start', dag=dag, resources=dict(organizationId='astronomer'))
+        start = DummyOperator(
+            task_id='start',
+            dag=dag,
+            priority_weight=10,
+            resources=astro_resources,
+        )
 
-        standard_events = StandardClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start)
-        standard_events.run()
+        redshift_pool = PythonOperator(
+            task_id='redshift_pool',
+            dag=dag,
+            python_callable=ensure_redshift_pool,
+            op_kwargs={
+                'name': pool_name,
+                'slots': REDSHIFT_POOL_SLOTS,
+            },
 
-        custom_events = CustomClickstreamEvents(workflow=workflow, dag=dag, upstream_task=start)
-        custom_events.run()
+            # xcom_pull=True,  # remove - invalid
+            # provide_context=True,
 
-        pool = Pool(pool=pool_name, slots=5)
-        pool_query = session.query(Pool)
-        pool_query = pool_query.filter(Pool.pool == pool_name)
-        pool_query = pool_query.filter(Pool.slots == 5)
-        pool_query_result = pool_query.limit(1).all()
-        if len(pool_query_result) == 0:
-            session.add(pool)
-            session.commit()
+            priority_weight=10,
+            resources=astro_resources,
 
-    client.close()
+            # execution_timeout=datetime.timedelta(minutes=5),
+        )
+        redshift_pool.set_upstream(start)
+
+        standard = StandardClickstreamEvents(workflow=workflow, dag=dag,
+                                             upstream_task=redshift_pool)
+        standard.run()
+
+        custom = CustomClickstreamEvents(workflow=workflow, dag=dag,
+                                         upstream_task=redshift_pool)
+        custom.run()
+
     logger.info('Finished exporting clickstream DAGs.')
 
 

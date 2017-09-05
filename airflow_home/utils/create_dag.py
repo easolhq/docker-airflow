@@ -78,7 +78,7 @@ def create_dag(workflow, schedule_interval=None, dag_cls=None, dag_type=None):
             workflow_name=workflow_name,
             id_=id_)
 
-    print('Building DAG: {name}'.format(name=dag_name))
+    # print('Building DAG: {name}'.format(name=dag_name))
     dag = dag_cls(dag_name, default_args=args, schedule_interval=schedule)
     create_tasks(dag, workflow)
     return dag

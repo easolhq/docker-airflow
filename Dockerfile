@@ -53,9 +53,6 @@ RUN set -ex \
     && npm install -g eslint eslint-config-google
 
 # setup blackmagic
-# TODO: pin node at 6.11.1
-# TODO: discuss possibly pulling blackmagic as a git submodule instead pinned
-# to tag v1.latest (master branch for now) - https://stackoverflow.com/a/1778247/149428
 ENV NODE_PATH /usr/lib/node_modules/
 ENV BLACKMAGIC_HOME ${AIRFLOW_HOME}/blackmagic
 ADD blackmagic ${BLACKMAGIC_HOME}/

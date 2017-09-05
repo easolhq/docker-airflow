@@ -53,12 +53,15 @@ def create_docker_operator(params):
 
 
 def create_linked_docker_operator_simple(
-        dag, activity,
-        retries=None,
-        retry_delay=None,
-        force_pull=None,
-        pool=None,
-        resources=None):
+    dag,
+    activity,
+    retries=None,
+    retry_delay=None,
+    force_pull=None,
+    pool=None,
+    # priority_weight=None,
+    resources=None,
+):
     """
     Adapter to work around the tuple in called function signature.
 
@@ -67,21 +70,30 @@ def create_linked_docker_operator_simple(
     """
     activity_tuple = (0, activity)
     return create_linked_docker_operator(
-        dag, [], '', activity_tuple,
+        dag,
+        [],
+        '',
+        activity_tuple,
         retries=retries,
         retry_delay=retry_delay,
         force_pull=force_pull,
         pool=pool,
-        resources=resources)
+        resources=resources,
+    )
 
 
 def create_linked_docker_operator(
-        dag, activity_list, initial_task_id, activity_tuple,
-        retries=None,
-        retry_delay=None,
-        force_pull=None,
-        pool=None,
-        resources=None):
+    dag,
+    activity_list,
+    initial_task_id,
+    activity_tuple,
+    retries=None,
+    retry_delay=None,
+    force_pull=None,
+    pool=None,
+    # priority_weight=None,
+    resources=None,
+):
     """
     Create DockerOperator for an activity that pulls XComs.
 
@@ -97,11 +109,7 @@ def create_linked_docker_operator(
     """
     index, activity = activity_tuple
     # Get the previous tasks id for xcom.
-    prev_task_id = (
-        initial_task_id if index is 0
-        else '{index}_{name}'.format(
-            index=index - 1,
-            name=format_task_name(activity_list[index - 1]['name'])))
+    prev_task_id = (initial_task_id if index is 0 else '{index}_{name}'.format(index=index - 1, name=format_task_name(activity_list[index - 1]['name'])))
 
     # Template out a command.
     command = """
@@ -125,9 +133,7 @@ def create_linked_docker_operator(
 
     # Create task id.
     # TODO: use activity.get('task_id', '...') instead
-    task_id = activity['task_id'] if 'task_id' in activity else '{index}_{name}'.format(
-        index=index,
-        name=format_task_name(activity['name']))
+    task_id = activity['task_id'] if 'task_id' in activity else '{index}_{name}'.format(index=index, name=format_task_name(activity['name']))
 
     # Check for vpnConnection. Must run privileged if a tunnel is needed.
     privileged = 'vpnConnection' in config.get('connection', {})

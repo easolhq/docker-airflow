@@ -1,102 +1,102 @@
-"""
-For future very explicit config schemas.
-"""
+# """
+# For future very explicit config schemas.
+# """
 
-import datetime
+# import datetime
 
-from marshmallow import Schema, fields, post_load
-from marshmallow.validate import Range
-
-
-class RedshiftConfig(object):
-    """
-    TODO
-    """
-
-    def __init__(self, host, port):
-        """
-        TODO
-        """
-        self.host = host
-        self.port = port
-        self.created_at = datetime.datetime.now()
-        self.timedelta = 0
-
-    def __repr__(self):
-        """
-        TODO
-        """
-        return '<Redshift(host={self.host!r})>'.format(self=self)
+# from marshmallow import Schema, fields, post_load
+# from marshmallow.validate import Range
 
 
-class RedshiftConfigSchema(Schema):
-    """
-    TODO
-    """
-    workflow_id = fields.Str(required=True, load_from='AppId', dump_to='AppId')
-    host = fields.Str(required=True)
-    port = fields.Integer(required=True, validate=Range(min=0, max=65535))
-    timedelta = fields.Integer(dump_only=True)
+# class RedshiftConfig(object):
+#     """
+#     TODO
+#     """
 
-    @post_load
-    def make_redshift(self, data):
-        """
-        TODO
-        """
-        return Redshift(**data)
+#     def __init__(self, host, port):
+#         """
+#         TODO
+#         """
+#         self.host = host
+#         self.port = port
+#         self.created_at = datetime.datetime.now()
+#         self.timedelta = 0
 
-
-class ClickstreamConfig(object):
-    """
-    TODO
-    """
-    pass
+#     def __repr__(self):
+#         """
+#         TODO
+#         """
+#         return '<Redshift(host={self.host!r})>'.format(self=self)
 
 
-class ClickstreamConfigSchema(Schema):
-    """
-    TODO
-    """
-    temp_bucket = fields.Str(required=True)
-    redshift = fields.Nested(RedshiftSchema, required=True)
+# class RedshiftConfigSchema(Schema):
+#     """
+#     TODO
+#     """
+#     workflow_id = fields.Str(required=True, load_from='AppId', dump_to='AppId')
+#     host = fields.Str(required=True)
+#     port = fields.Integer(required=True, validate=Range(min=0, max=65535))
+#     timedelta = fields.Integer(dump_only=True)
+
+#     @post_load
+#     def make_redshift(self, data):
+#         """
+#         TODO
+#         """
+#         return Redshift(**data)
 
 
-# def load_redshift_schema(data):
-#     """Load redshift config and validate schema."""
-#     rs = RedshiftConfigSchema()
-#     result = rs.load(data)
-#     if result.errors:
-#         print('errors!')
-#         print(result.errors)
-#     print(result.data)
-#     return result
+# class ClickstreamConfig(object):
+#     """
+#     TODO
+#     """
+#     pass
 
 
-def main():
-    """
-    TODO
-    """
-    redshift_data = {
-        'AppId': '1234',
-        'host': 'myhost',
-        'port': '123'
-    }
-
-    clickstream_data = {
-        'temp_bucket': 'abc',
-        'config': redshift_data
-    }
-
-    ccs = ClickstreamConfigSchema()
-    cc, errors = ccs.load(clickstream_data)
-    if errors:
-        print('errors!', errors)
-    print('cc:', cc)
-
-    # dump nested clickstream config
-    cc_dump_data = ccs.dump(cc)
-    print('cc_dump_data:', cc_dump_data)
+# class ClickstreamConfigSchema(Schema):
+#     """
+#     TODO
+#     """
+#     temp_bucket = fields.Str(required=True)
+#     redshift = fields.Nested(RedshiftSchema, required=True)
 
 
-if __name__ == '__main__':
-    main()
+# # def load_redshift_schema(data):
+# #     """Load redshift config and validate schema."""
+# #     rs = RedshiftConfigSchema()
+# #     result = rs.load(data)
+# #     if result.errors:
+# #         print('errors!')
+# #         print(result.errors)
+# #     print(result.data)
+# #     return result
+
+
+# def main():
+#     """
+#     TODO
+#     """
+#     redshift_data = {
+#         'AppId': '1234',
+#         'host': 'myhost',
+#         'port': '123'
+#     }
+
+#     clickstream_data = {
+#         'temp_bucket': 'abc',
+#         'config': redshift_data
+#     }
+
+#     ccs = ClickstreamConfigSchema()
+#     cc, errors = ccs.load(clickstream_data)
+#     if errors:
+#         print('errors!', errors)
+#     print('cc:', cc)
+
+#     # dump nested clickstream config
+#     cc_dump_data = ccs.dump(cc)
+#     print('cc_dump_data:', cc_dump_data)
+
+
+# if __name__ == '__main__':
+#     main()

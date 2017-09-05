@@ -50,7 +50,8 @@ def parse_json(str):
 def run(cmd):
     """Run a command in a child process."""
     try:
-        rv = subprocess.check_output(cmd, shell=True, universal_newlines=True, timeout=5)
+        # rv = subprocess.check_output(cmd, shell=True, universal_newlines=True, timeout=5)
+        rv = subprocess.check_output(cmd, shell=True, universal_newlines=True, timeout=10)
     except subprocess.CalledProcessError as e:
         logger.error('child proc error - {}'.format(e))
         return None

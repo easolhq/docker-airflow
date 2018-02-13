@@ -1,12 +1,12 @@
-FROM python:3.6.1
-MAINTAINER schnie <greg@astronomer.io>
+FROM python:2.7.14
+MAINTAINER kyle <kyle@fixers.co.uk>
 
 # Never prompts the user for choices on installation/configuration of packages
 ENV DEBIAN_FRONTEND noninteractive
 ENV TERM linux
 
 # Airflow
-ARG AIRFLOW_VERSION=1.8.1
+ARG AIRFLOW_VERSION=1.8.0
 ENV AIRFLOW_HOME /airflow_home
 
 # Define en_US.

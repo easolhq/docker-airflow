@@ -1,6 +1,5 @@
 # docker-airflow
 
-[![CircleCI](https://circleci.com/gh/astronomerio/docker-airflow.svg?style=svg)](https://circleci.com/gh/astronomerio/docker-airflow)
 
 Airflow docker container
 

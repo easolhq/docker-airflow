@@ -16,6 +16,6 @@ coverage==4.2
 pycodestyle==2.2.0
 pymesos==0.2.13
 addict==2.1.0
-marshmallow==2.13.5
+marshmallow==2.15.1
 boa-str==1.1.0
 raven==6.1.0

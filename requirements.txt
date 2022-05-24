@@ -2,7 +2,7 @@
 
 requests==2.18.3
 pytz==2015.7
-cryptography==1.7.2
+cryptography==3.3.2
 pyOpenSSL==16.2.0
 ndg-httpsclient==0.4.2
 pyasn1==0.1.9
